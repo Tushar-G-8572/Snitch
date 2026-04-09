@@ -1,14 +1,21 @@
 import { Router } from "express";
 const authRouter = Router();
 import { registerValidator, loginValidator } from "../validators/auth.validator.js";
-import { registerController, loginController,  get_MEController } from "../controller/auth.controller.js";
+import { registerController, loginController,  get_MEController, handleGooleSignupAndLogin, changeRoleController } from "../controller/auth.controller.js";
 import passport from "passport";
-import { authUser_RoleMiddleware } from "../middleware/auth.middleware.js";
+import { authUserMiddleware } from "../middleware/auth.middleware.js";
 
 authRouter.post('/register', registerValidator, registerController)
 
 authRouter.post('/login', loginValidator, loginController);
 
-authRouter.get('/get-me',authUser_RoleMiddleware,get_MEController);
+authRouter.get('/get-me',authUserMiddleware,get_MEController);
+
+authRouter.get('/google',passport.authenticate('google',{scope:["profile","email"]}))
+
+authRouter.get('/google/callback',passport.authenticate('google',{session:false,failureRedirect:"/"}),handleGooleSignupAndLogin)
+
+authRouter.post('/change-role',authUserMiddleware,changeRoleController);
+
 
 export default authRouter;

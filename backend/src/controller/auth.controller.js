@@ -79,3 +79,52 @@ export async function get_MEController(req,res) {
     return res.status(500).json({success:false,message:"Error while fetching user"});
 }
 }
+
+export async function handleGooleSignupAndLogin(req,res) {
+    try{
+        const {sub,given_name,name,email} = req.user._json;
+        const user = await userModel.findOne({email});
+        if(user){
+            const token = createToken(user._id,user.role);
+            res.cookie('token', token);
+            return res.status(200).json({success:true,message:"User logged in successfully"})
+        }
+        const userName = given_name.split(' ').join('').toLocaleLowerCase() + sub.split('').reverse().join('').substring(0,5);
+        const newUser = userModel.create({
+            fullName:name,
+            email:email,
+            username:userName,
+        })
+        const token = createToken(newUser._id,newUser.role);
+        res.cookie('token', token);
+        return res.status(201).json({success:true,message:"User registered successfully"})
+
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({success:false,message:"Error while google authentication"})
+    }
+}
+
+export async function changeRoleController(req,res) {
+    try{
+
+        const token = req.user.id;
+        if(!token){
+        return res.status(401).json({success:false,message:"Unauthorized"})
+    }
+    const {role} = req.body;
+    if(!role || (role !== 'Seller' && role !== 'Buyer')){
+        return res.status(400).json({success:false,message:"Invalid role"})
+    }
+    const user = await userModel.findById(token);
+    if(!user){
+        return res.status(404).json({success:false,message:"User not found"})
+    }
+    user.role = role;
+    await user.save();
+    return res.status(200).json({success:true,message:"Role updated successfully"})
+}catch(error){
+    console.error(error);
+    return res.status(500).json({success:false,message:"Error while changing role"})
+}
+}
