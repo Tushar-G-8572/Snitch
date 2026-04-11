@@ -9,24 +9,24 @@ export const useAuth = ()=>{
     try{
       dispatch(setLoading(true));
       const user = await login(email,password);
-      return true;
       dispatch(setUser(user));
+      return true;
     }catch(error){
-      dispatch(setError(error));
+      dispatch(setError(error?.response?.data?.message || error?.message || 'Login failed'));
       return false;
     }finally{
       dispatch(setLoading(false));
     }
   }
 
-  async function handleRegister(email,password,fullName,username,role) {
+  async function handleRegister(fullName,username,email,password,role) {
     try{
       dispatch(setLoading(true));
-      const user = await register(email,password,username,role,fullName);
-      return true
+      const user = await register(email,password,username,fullName,role);
       dispatch(setUser(user));
+      return true
     }catch(error){
-      dispatch(setError(error));
+      dispatch(setError(error?.response?.data?.message || error?.message || 'Registration failed'));
       return false
     }finally{
       dispatch(setLoading(false));

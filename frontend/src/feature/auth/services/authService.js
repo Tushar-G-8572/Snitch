@@ -12,6 +12,7 @@ export async function login(email,password) {
 }
 
 export async function register(email,password,username,fullName,role) {
+  console.log("Service",email,password,username,fullName,role)
   const response = await api.post('/register',{email,password,username,fullName,role})
 }
 

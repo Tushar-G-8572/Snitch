@@ -106,16 +106,14 @@ export const LoginPage = () => {
 
         {/* Social buttons */}
         <div className="flex gap-4">
-          <a href="/api/auth/google">
-          <button id="login-google" className="btn-outline">
+          <a href="/api/auth/google" id="login-google" className="btn-outline" >
             <FcGoogle size={18} />
             <span>Google</span>
-          </button>
           </a>
-          <button id="login-apple" className="btn-outline">
+          <a id="login-apple" className="btn-outline">
             <FaApple size={18} className="text-on-surface" />
             <span>Apple</span>
-          </button>
+          </a>
         </div>
 
         {/* Footer */}
