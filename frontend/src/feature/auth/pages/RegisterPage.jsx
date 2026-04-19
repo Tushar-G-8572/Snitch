@@ -20,6 +20,7 @@ export const RegisterPage = () => {
   const { handleRegister} = useAuth();
   const loading = useSelector(state=> state.auth.loading);
   const error = useSelector(state=> state.auth.error);
+  const user = useSelector(state => state.auth.user);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +35,7 @@ export const RegisterPage = () => {
       navigate('/');
   }
   };
+
 
   return (
     <div className="dark-mesh min-h-screen flex flex-col justify-center items-center px-4 py-10">

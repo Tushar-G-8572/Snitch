@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Link, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
@@ -10,6 +10,7 @@ export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { handleLogin } = useAuth();
+  const user = useSelector(state => state.auth.user);
 
   const loading = useSelector(state => state.auth.loading)
   const error = useSelector(state => state.auth.error)

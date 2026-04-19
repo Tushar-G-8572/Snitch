@@ -4,6 +4,7 @@ import authRouter from './routers/auth.routes.js';
 import passport from 'passport';
 import './config/google.config.js';
 import cookieParser from 'cookie-parser'
+import productRouter from './routers/product.routes.js';
 
 const app = express();
 
@@ -15,6 +16,6 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use('/api/auth', authRouter);
-
+app.use('/api/product',productRouter);
 
 export default app;

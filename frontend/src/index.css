@@ -144,3 +144,20 @@
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Product detail page light overrides */
+.pdp-cart-btn:hover {
+  background-color: #1a1a1a !important;
+  color: #fff !important;
+}
+.pdp-buy-btn:hover {
+  background-color: #2d3435 !important;
+}
+.pdp-qty-btn:hover {
+  background-color: #f2f4f4 !important;
+}
