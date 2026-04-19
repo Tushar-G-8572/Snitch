@@ -16,17 +16,11 @@ const StarRating = ({ rating = 4.5 }) => {
   for (let i = 1; i <= 5; i++) {
     const fill = i <= Math.floor(rating) ? 1 : i - rating < 1 ? i - rating : 0;
     stars.push(
-      <span key={i} style={{ position: 'relative', display: 'inline-block', color: '#e5e5e5', fontSize: '1.1rem' }}>
+      <span key={i} className="relative inline-block text-gray-400 text-lg">
         ★
         <span
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            overflow: 'hidden',
-            width: `${fill * 100}%`,
-            color: '#f59e0b',
-          }}
+          className="absolute left-0 top-0 overflow-hidden text-amber-400"
+          style={{ width: `${fill * 100}%` }}
         >
           ★
         </span>
@@ -48,6 +42,17 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [imgLoaded, setImgLoaded]  = useState(false);
 
+  const user = useSelector(state => state.auth.user);
+
+  const handleBuyNow =  async()=>{
+    if(!user){
+      navigate('/login');
+    }
+    else {
+      alert("Done");
+    }
+  }
+
   useEffect(() => {
     handleGetProductFromProductId(productId);
   }, [productId]);
@@ -58,12 +63,12 @@ const ProductDetailPage = () => {
   /* ── loading skeleton ── */
   if (loading) {
     return (
-      <div style={styles.page}>
-        <div style={styles.skeleton.wrapper}>
-          <div style={styles.skeleton.imgBlock} />
-          <div style={styles.skeleton.infoBlock}>
+      <div className="min-h-screen bg-gray-50 font-sans pb-20">
+        <div className="max-w-5xl mx-auto px-10 py-6 grid grid-cols-2 gap-16">
+          <div className="w-full aspect-[4/5] bg-gray-300 rounded animate-pulse" />
+          <div className="flex flex-col gap-4 pt-5">
             {[80, 50, 30, 60, 40].map((w, i) => (
-              <div key={i} style={{ ...styles.skeleton.line, width: `${w}%` }} />
+              <div key={i} className="h-4 bg-gray-300 rounded animate-pulse" style={{ width: `${w}%` }} />
             ))}
           </div>
         </div>
@@ -74,10 +79,15 @@ const ProductDetailPage = () => {
   /* ── no product guard ── */
   if (!product || (Array.isArray(product) && product.length === 0)) {
     return (
-      <div style={styles.page}>
-        <div style={styles.empty}>
-          <p style={{ color: '#596061', fontFamily: 'Inter, sans-serif' }}>Product not found.</p>
-          <button style={styles.backBtn} onClick={() => navigate(-1)}>← Go Back</button>
+      <div className="min-h-screen bg-gray-50 font-sans pb-20">
+        <div className="max-w-sm mx-auto text-center pt-32">
+          <p className="text-gray-600 font-sans mb-4">Product not found.</p>
+          <button 
+            onClick={() => navigate(-1)}
+            className="mt-4 border border-gray-300 px-5 py-2.5 rounded text-sm text-gray-600 hover:bg-gray-50 transition"
+          >
+            ← Go Back
+          </button>
         </div>
       </div>
     );
@@ -94,97 +104,116 @@ const ProductDetailPage = () => {
   const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
 
   return (
-    <div style={styles.page}>
-      {/* Back breadcrumb */}
-      <nav style={styles.breadcrumb}>
-        <span style={styles.breadLink} onClick={() => navigate('/')}>Home</span>
-        <span style={styles.breadSep}> / </span>
-        <span style={styles.breadLink} onClick={() => navigate(-1)}>Men</span>
-        <span style={styles.breadSep}> / </span>
-        <span style={styles.breadCurrent}>{title || 'Product'}</span>
+    <div className="min-h-screen bg-gray-50 font-sans pb-20 text-gray-700">
+      {/* Breadcrumb */}
+      <nav className="max-w-5xl mx-auto px-10 py-5 text-xs text-gray-600 flex items-center gap-1">
+        <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate('/')}>Home</span>
+        <span className="text-gray-400 px-1"> / </span>
+        <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate(-1)}>Men</span>
+        <span className="text-gray-400 px-1"> / </span>
+        <span className="text-gray-900 font-medium">{title || 'Product'}</span>
       </nav>
 
-      {/* ── main panel ─────────────────────────── */}
-      <div style={styles.grid}>
+      {/* Main Grid */}
+      <div className="max-w-5xl mx-auto px-10 py-6 grid grid-cols-2 gap-16 items-start">
 
-        {/* ── LEFT: image gallery ── */}
-        <div style={styles.gallery}>
-          {/* Main image */}
-          <div style={styles.mainImgWrap}>
+        {/* LEFT: Gallery */}
+        <div className="flex flex-col gap-4 sticky top-6">
+          {/* Main Image */}
+          <div className="w-full aspect-[4/5] bg-white rounded overflow-hidden relative shadow-sm">
             <img
               key={displayImg}
               src={displayImg}
               alt={title}
-              style={{ ...styles.mainImg, opacity: imgLoaded ? 1 : 0 }}
+              className="w-full h-full object-cover transition-opacity duration-300"
+              style={{ opacity: imgLoaded ? 1 : 0 }}
               onLoad={() => setImgLoaded(true)}
-              onError={(e) => { e.target.src = 'https://placehold.co/600x700?text=No+Image'; setImgLoaded(true); }}
+              onError={(e) => { 
+                e.target.src = 'https://placehold.co/600x700?text=No+Image'; 
+                setImgLoaded(true); 
+              }}
             />
-            {!imgLoaded && <div style={styles.skeleton.imgBlock} />}
+            {!imgLoaded && <div className="absolute inset-0 bg-gray-300 animate-pulse" />}
           </div>
 
           {/* Thumbnails */}
           {imgs.length > 1 && (
-            <div style={styles.thumbRow}>
+            <div className="flex gap-2.5">
               {imgs.map((url, i) => (
                 <button
                   key={i}
-                  onClick={() => { setImgLoaded(false); setActiveImg(i); }}
-                  style={{
-                    ...styles.thumbBtn,
-                    ...(i === activeImg ? styles.thumbBtnActive : {}),
+                  onClick={() => { 
+                    setImgLoaded(false); 
+                    setActiveImg(i); 
                   }}
+                  className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${
+                    i === activeImg ? 'border-gray-900' : 'border-transparent'
+                  }`}
                 >
-                  <img src={url} alt={`view-${i + 1}`} style={styles.thumbImg}
-                    onError={(e) => { e.target.src = 'https://placehold.co/80x96?text=img'; }} />
+                  <img 
+                    src={url} 
+                    alt={`view-${i + 1}`} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => { 
+                      e.target.src = 'https://placehold.co/80x96?text=img'; 
+                    }} 
+                  />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* ── RIGHT: product info ── */}
-        <div style={styles.info}>
+        {/* RIGHT: Product Info */}
+        <div className="flex flex-col gap-0">
 
           {/* Title */}
-          <h1 style={styles.title}>{title}</h1>
+          <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-3 tracking-tight">
+            {title}
+          </h1>
 
           {/* Rating */}
-          <div style={styles.ratingRow}>
+          <div className="flex items-center gap-2 mb-4">
             <StarRating rating={4.5} />
-            <span style={styles.ratingText}>4.5 &nbsp;·&nbsp; 128 reviews</span>
+            <span className="text-sm text-gray-600">4.5 &nbsp;·&nbsp; 128 reviews</span>
           </div>
 
           {/* Price */}
-          <div style={styles.priceRow}>
-            <span style={styles.price}>
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
+            <span className="text-4xl font-bold text-gray-900 tracking-tight">
               {price ? formatPrice(price.amount, price.currency) : '₹0'}
             </span>
-            <span style={styles.mrp}>
+            <span className="text-xl text-gray-400 line-through font-normal">
               {price ? formatPrice(price.amount * 2, price.currency) : ''}
             </span>
-            <span style={styles.discBadge}>50% OFF</span>
+            <span className="text-xs font-bold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full tracking-wide">
+              50% OFF
+            </span>
           </div>
 
-          <p style={styles.taxNote}>Inclusive of all taxes</p>
+          <p className="text-xs text-gray-400 mb-5 tracking-wide">Inclusive of all taxes</p>
 
           {/* Divider */}
-          <div style={styles.divider} />
+          <div className="h-px bg-gray-200 my-1 mb-5" />
 
           {/* Description */}
-          <p style={styles.description}>{description}</p>
+          <p className="text-sm text-gray-600 leading-relaxed mb-7">
+            {description}
+          </p>
 
-          {/* Size selector */}
-          <div style={styles.section}>
-            <p style={styles.sectionLabel}>SELECT SIZE</p>
-            <div style={styles.sizeRow}>
+          {/* Size Selector */}
+          <div className="mb-7">
+            <p className="text-xs font-bold text-gray-400 mb-3 tracking-wider uppercase">SELECT SIZE</p>
+            <div className="flex gap-2.5 flex-wrap">
               {sizes.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSelectedSize(s)}
-                  style={{
-                    ...styles.sizeBtn,
-                    ...(s === selectedSize ? styles.sizeBtnActive : {}),
-                  }}
+                  className={`w-13 h-13 border-1.5 rounded text-sm font-medium transition-all ${
+                    s === selectedSize
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
                 >
                   {s}
                 </button>
@@ -193,49 +222,51 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Quantity */}
-          <div style={styles.section}>
-            <p style={styles.sectionLabel}>QUANTITY</p>
-            <div style={styles.qtyRow}>
+          <div className="mb-7">
+            <p className="text-xs font-bold text-gray-400 mb-3 tracking-wider uppercase">QUANTITY</p>
+            <div className="flex items-center gap-0">
               <button
-                style={styles.qtyBtn}
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="w-11 h-11 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition"
               >
                 −
               </button>
-              <span style={styles.qtyNum}>{quantity}</span>
+              <span className="w-14 h-11 border-y-1.5 border-gray-200 flex items-center justify-center text-base font-bold text-gray-900">
+                {quantity}
+              </span>
               <button
-                style={styles.qtyBtn}
                 onClick={() => setQuantity((q) => q + 1)}
+                className="w-11 h-11 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition"
               >
                 +
               </button>
             </div>
           </div>
 
-          {/* CTA buttons */}
-          <div style={styles.ctaRow}>
-            <button style={styles.cartBtn}>
-              <span style={{ marginRight: '8px' }}>🛒</span>
+          {/* CTA Buttons */}
+          <div className="flex flex-col gap-3 mb-7">
+            <button className="w-full py-4 border-2 border-gray-900 bg-transparent text-gray-900 text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-900 hover:text-white">
+              <span className="mr-2">🛒</span>
               ADD TO CART
             </button>
-            <button style={styles.buyBtn}>
+            <button onClick={handleBuyNow} className="w-full py-4 border-2 border-gray-900 bg-gray-900 text-white text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-800">
               BUY NOW
             </button>
           </div>
 
-          {/* Trust badges */}
-          <div style={styles.trustSection}>
-            <div style={styles.trustItem}>
-              <span style={styles.trustIcon}>🚚</span>
-              <span style={styles.trustText}>Free delivery on orders above ₹499</span>
+          {/* Trust Badges */}
+          <div className="bg-gray-100 rounded p-5 flex flex-col gap-3.5">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🚚</span>
+              <span className="text-sm text-gray-600">Free delivery on orders above ₹499</span>
             </div>
-            <div style={styles.trustItem}>
-              <span style={styles.trustIcon}>🔄</span>
-              <span style={styles.trustText}>7-day easy returns &amp; exchanges</span>
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🔄</span>
+              <span className="text-sm text-gray-600">7-day easy returns &amp; exchanges</span>
             </div>
-            <div style={styles.trustItem}>
-              <span style={styles.trustIcon}>✅</span>
-              <span style={styles.trustText}>100% authentic products</span>
+            <div className="flex items-center gap-3">
+              <span className="text-lg">✅</span>
+              <span className="text-sm text-gray-600">100% authentic products</span>
             </div>
           </div>
 
@@ -243,291 +274,6 @@ const ProductDetailPage = () => {
       </div>
     </div>
   );
-};
-
-/* ─── styles ──────────────────────────────────────── */
-const styles = {
-  page: {
-    minHeight: '100vh',
-    backgroundColor: '#f9f9f9',
-    fontFamily: "'Inter', sans-serif",
-    padding: '0 0 80px',
-    color: '#2d3435',
-  },
-
-  /* Breadcrumb */
-  breadcrumb: {
-    maxWidth: '1280px',
-    margin: '0 auto',
-    padding: '20px 40px 8px',
-    fontSize: '0.8rem',
-    color: '#596061',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '2px',
-  },
-  breadLink: {
-    cursor: 'pointer',
-    color: '#596061',
-    textDecoration: 'none',
-    transition: 'color 0.2s',
-  },
-  breadSep: { color: '#acb3b4', padding: '0 4px' },
-  breadCurrent: { color: '#2d3435', fontWeight: 500 },
-
-  /* Grid */
-  grid: {
-    maxWidth: '1280px',
-    margin: '0 auto',
-    padding: '24px 40px',
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '64px',
-    alignItems: 'start',
-  },
-
-  /* Gallery */
-  gallery: { display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '24px' },
-  mainImgWrap: {
-    width: '100%',
-    aspectRatio: '4/5',
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    position: 'relative',
-    boxShadow: '0 2px 24px rgba(45,52,53,0.06)',
-  },
-  mainImg: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block',
-    transition: 'opacity 0.3s ease',
-  },
-  thumbRow: {
-    display: 'flex',
-    gap: '10px',
-  },
-  thumbBtn: {
-    width: '80px',
-    height: '96px',
-    border: '2px solid transparent',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    cursor: 'pointer',
-    background: '#fff',
-    padding: 0,
-    transition: 'border-color 0.2s',
-  },
-  thumbBtnActive: { borderColor: '#1a1a1a' },
-  thumbImg: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-
-  /* Info panel */
-  info: { display: 'flex', flexDirection: 'column', gap: '0' },
-
-  title: {
-    fontSize: '2rem',
-    fontWeight: 700,
-    color: '#1a1a1a',
-    lineHeight: 1.2,
-    letterSpacing: '-0.02em',
-    margin: '0 0 12px',
-  },
-  ratingRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '16px',
-  },
-  ratingText: { fontSize: '0.85rem', color: '#596061' },
-
-  priceRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '4px',
-    flexWrap: 'wrap',
-  },
-  price: { fontSize: '2rem', fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.02em' },
-  mrp: {
-    fontSize: '1.1rem',
-    color: '#acb3b4',
-    textDecoration: 'line-through',
-    fontWeight: 400,
-  },
-  discBadge: {
-    fontSize: '0.75rem',
-    fontWeight: 700,
-    color: '#15803d',
-    backgroundColor: '#dcfce7',
-    padding: '3px 10px',
-    borderRadius: '99px',
-    letterSpacing: '0.03em',
-  },
-  taxNote: { fontSize: '0.75rem', color: '#acb3b4', margin: '0 0 20px', letterSpacing: '0.02em' },
-
-  divider: { height: '1px', backgroundColor: '#e4e9ea', margin: '4px 0 20px' },
-
-  description: {
-    fontSize: '0.95rem',
-    color: '#596061',
-    lineHeight: 1.7,
-    margin: '0 0 28px',
-  },
-
-  section: { marginBottom: '28px' },
-  sectionLabel: {
-    fontSize: '0.7rem',
-    fontWeight: 700,
-    letterSpacing: '0.1em',
-    color: '#acb3b4',
-    marginBottom: '12px',
-  },
-
-  sizeRow: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
-  sizeBtn: {
-    width: '52px',
-    height: '52px',
-    border: '1.5px solid #e4e9ea',
-    borderRadius: '4px',
-    background: '#fff',
-    color: '#2d3435',
-    fontSize: '0.85rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontFamily: 'Inter, sans-serif',
-  },
-  sizeBtnActive: {
-    border: '2px solid #1a1a1a',
-    backgroundColor: '#1a1a1a',
-    color: '#fff',
-  },
-
-  qtyRow: { display: 'flex', alignItems: 'center', gap: '0' },
-  qtyBtn: {
-    width: '44px',
-    height: '44px',
-    border: '1.5px solid #e4e9ea',
-    background: '#fff',
-    fontSize: '1.2rem',
-    color: '#2d3435',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background 0.2s',
-    fontFamily: 'Inter, sans-serif',
-  },
-  qtyNum: {
-    width: '56px',
-    height: '44px',
-    border: '1.5px solid #e4e9ea',
-    borderLeft: 'none',
-    borderRight: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1rem',
-    fontWeight: 600,
-    color: '#1a1a1a',
-    userSelect: 'none',
-  },
-
-  ctaRow: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' },
-  cartBtn: {
-    width: '100%',
-    padding: '16px',
-    border: '2px solid #1a1a1a',
-    backgroundColor: 'transparent',
-    color: '#1a1a1a',
-    fontSize: '0.85rem',
-    fontWeight: 700,
-    letterSpacing: '0.1em',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    fontFamily: 'Inter, sans-serif',
-    transition: 'all 0.25s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buyBtn: {
-    width: '100%',
-    padding: '16px',
-    border: '2px solid #1a1a1a',
-    backgroundColor: '#1a1a1a',
-    color: '#fff',
-    fontSize: '0.85rem',
-    fontWeight: 700,
-    letterSpacing: '0.1em',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    fontFamily: 'Inter, sans-serif',
-    transition: 'all 0.25s',
-  },
-
-  trustSection: {
-    backgroundColor: '#f2f4f4',
-    borderRadius: '4px',
-    padding: '20px 24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '14px',
-  },
-  trustItem: { display: 'flex', alignItems: 'center', gap: '12px' },
-  trustIcon: { fontSize: '1.1rem' },
-  trustText: { fontSize: '0.85rem', color: '#596061' },
-
-  /* Back button */
-  backBtn: {
-    marginTop: '16px',
-    background: 'none',
-    border: '1px solid #e4e9ea',
-    padding: '10px 20px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '0.85rem',
-    color: '#596061',
-  },
-
-  /* Empty / loading */
-  empty: {
-    maxWidth: '400px',
-    margin: '120px auto',
-    textAlign: 'center',
-  },
-
-  skeleton: {
-    wrapper: {
-      maxWidth: '1280px',
-      margin: '40px auto',
-      padding: '24px 40px',
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '64px',
-    },
-    imgBlock: {
-      width: '100%',
-      aspectRatio: '4/5',
-      backgroundColor: '#e4e9ea',
-      borderRadius: '4px',
-      animation: 'pulse 1.5s ease-in-out infinite',
-    },
-    infoBlock: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px',
-      paddingTop: '20px',
-    },
-    line: {
-      height: '18px',
-      backgroundColor: '#e4e9ea',
-      borderRadius: '4px',
-      animation: 'pulse 1.5s ease-in-out infinite',
-    },
-  },
 };
 
 export default ProductDetailPage;

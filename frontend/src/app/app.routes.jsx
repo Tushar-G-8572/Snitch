@@ -1,8 +1,8 @@
 import { createBrowserRouter } from "react-router";
 import { LoginPage } from "../feature/auth/pages/LoginPage";
 import { RegisterPage } from '../feature/auth/pages/RegisterPage';
-import HomePage from "../shared/pages/HomePage";
 import CreateProduct from "../feature/product/pages/CreateProduct";
+import EditProduct from "../feature/product/pages/EditProduct";
 import Dashboard from "../feature/product/pages/DashBoard";
 import Home from "../feature/product/pages/HomePage";
 import Protected from "../feature/product/components/Protected";
@@ -38,6 +38,12 @@ export const router = createBrowserRouter([
                 path:'/seller/dashboard',
                 element:<Protected role="Seller" >
                     <Dashboard />
+                </Protected>
+            },
+            {
+                path:'/seller/edit-product/:productId',
+                element:<Protected role="Seller" >
+                    <EditProduct />
                 </Protected>
             }
         ]

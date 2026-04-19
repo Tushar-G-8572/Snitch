@@ -8,9 +8,9 @@ import { useSelector } from "react-redux"
 const App = ()=>{
   const {handleGetMe} = useAuth()
   const user = useSelector(state => state.auth.user);
-  // useEffect(()=>{
-  //    handleGetMe()
-  // }, [])
+  useEffect(()=>{
+     handleGetMe()
+  }, [])
 
   return (
     <RouterProvider router={router} />

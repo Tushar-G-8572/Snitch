@@ -23,6 +23,9 @@ export default {
         serif: ['"Playfair Display"', 'Georgia', "serif"],
         sans:  ['"Inter"', '"Helvetica Neue"', "sans-serif"],
       },
+      borderWidth: {
+        "1.5": "1.5px",
+      },
       backgroundImage: {
         "hero-gradient": "linear-gradient(135deg, #0a0a0a 0%, #141414 50%, #0f0f0f 100%)",
       },

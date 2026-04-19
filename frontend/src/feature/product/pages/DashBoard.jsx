@@ -11,7 +11,7 @@ const Dashboard = () => {
         handleGetSellerProducts();
     }, []);
     const sellerProducts = useSelector(state => state.product.sellerProducts);
-    console.log("sellerProducts", sellerProducts)
+
     return (
         <>
             {/* Google Fonts */}
@@ -89,9 +89,13 @@ const Dashboard = () => {
                                     : '/snitch_editorial_warm.png'; // Fallback to our warm editorial
 
                                 return (
-                                    <div key={product._id} className="group cursor-pointer flex flex-col">
-                                        {/* Image Container */}
-                                        <div className="aspect-[4/5] overflow-hidden mb-6" style={{ backgroundColor: '#f5f3f0' }}>
+                                    <div key={product._id} className="group flex flex-col">
+                                        {/* Image */}
+                                        <div
+                                            className="aspect-[4/5] overflow-hidden mb-5 cursor-pointer"
+                                            style={{ backgroundColor: '#f5f3f0' }}
+                                            onClick={() => navigate(`/product/${product._id}`)}
+                                        >
                                             <img
                                                 src={imageUrl}
                                                 alt={product.title}
@@ -99,31 +103,51 @@ const Dashboard = () => {
                                             />
                                         </div>
 
-                                        {/* Product Details */}
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <h3
-                                                    className="text-xl leading-snug transition-colors duration-300 group-hover:text-[#C9A96E]"
-                                                    style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
-                                                >
-                                                    {product.title}
-                                                </h3>
-                                            </div>
-
-                                            <p
-                                                className="text-[12px] line-clamp-2 leading-relaxed"
-                                                style={{ color: '#7A6E63' }}
+                                        {/* Details */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <h3
+                                                className="text-xl leading-snug transition-colors duration-300 group-hover:text-[#C9A96E] cursor-pointer"
+                                                style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
+                                                onClick={() => navigate(`/product/${product._id}`)}
                                             >
+                                                {product.title}
+                                            </h3>
+
+                                            <p className="text-[12px] line-clamp-2 leading-relaxed" style={{ color: '#7A6E63' }}>
                                                 {product.description}
                                             </p>
 
-                                            <div className="mt-2">
-                                                <span
-                                                    className="text-[10px] uppercase tracking-[0.2em] font-medium"
-                                                    style={{ color: '#1b1c1a' }}
+                                            <span className="text-[10px] uppercase tracking-[0.2em] font-medium mt-1" style={{ color: '#1b1c1a' }}>
+                                                {product.price?.currency} {product.price?.amount?.toLocaleString()}
+                                            </span>
+
+                                            {/* ── Action Buttons ── */}
+                                            <div className="flex gap-2 mt-2">
+                                                {/* Edit */}
+                                                <button
+                                                    onClick={() => navigate(`/seller/edit-product/${product._id}`)}
+                                                    className="flex-1 py-2 text-[10px] uppercase tracking-[0.2em] font-medium transition-all duration-300"
+                                                    style={{ border: '1px solid #1b1c1a', backgroundColor: 'transparent', color: '#1b1c1a' }}
+                                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1b1c1a'; e.currentTarget.style.color = '#fbf9f6'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#1b1c1a'; }}
                                                 >
-                                                    {product.price?.currency} {product.price?.amount?.toLocaleString()}
-                                                </span>
+                                                    Edit
+                                                </button>
+
+                                                {/* Delete */}
+                                                <button
+                                                    onClick={() => {
+                                                        if (window.confirm(`Delete "${product.title}"? This cannot be undone.`)) {
+                                                            console.log('delete', product._id);
+                                                        }
+                                                    }}
+                                                    className="flex-1 py-2 text-[10px] uppercase tracking-[0.2em] font-medium transition-all duration-300"
+                                                    style={{ border: '1px solid #C9A96E', backgroundColor: 'transparent', color: '#C9A96E' }}
+                                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#C9A96E'; e.currentTarget.style.color = '#1b1c1a'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#C9A96E'; }}
+                                                >
+                                                    Delete
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
