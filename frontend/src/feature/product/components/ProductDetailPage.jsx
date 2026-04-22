@@ -50,6 +50,7 @@ const ProductDetailPage = () => {
   /* gallery state */
   const [activeImgUrl, setActiveImgUrl] = useState('');
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [price,setPrice] = useState(0);
 
   /* quantity */
   const [quantity, setQuantity] = useState(1);
@@ -238,7 +239,7 @@ const ProductDetailPage = () => {
               {baseImgs.map((url, i) => (
                 <button
                   key={i}
-                  onClick={() => { setImgLoaded(false); setActiveImgUrl(url); }}
+                  onClick={() => { setImgLoaded(false); setActiveImgUrl(url); setSelectedAttrs(product) }}
                   className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${
                     url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
                   }`}
@@ -282,6 +283,17 @@ const ProductDetailPage = () => {
             </span>
           </div>
           <p className="text-xs text-gray-400 mb-5 tracking-wide">Inclusive of all taxes</p>
+
+          {/* Selected Variant Attributes */}
+          {selectedVariant && Object.keys(selectedVariant.attrs).length > 0 && (
+            <div className="mb-5 flex gap-2 flex-wrap">
+              {Object.entries(selectedVariant.attrs).map(([k, val]) => (
+                <span key={k} className="text-sm font-medium bg-gray-100 text-gray-800 px-3 py-1 rounded border border-gray-200">
+                  <span className="text-gray-500 mr-1">{k}:</span> {val}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Divider */}
           <div className="h-px bg-gray-200 my-1 mb-5" />
@@ -345,9 +357,16 @@ const ProductDetailPage = () => {
                   const isActive = selectedVariant?._id === v._id;
 
                   return (
-                    <div
+                    <div 
                       key={v._id || i}
-                      className="flex flex-col p-4 rounded border transition"
+                      onClick={() => {
+                        setSelectedAttrs(v.attrs);
+                        if (v.imgs?.length > 0 && !v.imgs.includes(activeImgUrl)) {
+                          setImgLoaded(false);
+                          setActiveImgUrl(v.imgs[0]);
+                        }
+                      }}
+                      className="flex flex-col p-4 rounded border transition cursor-pointer"
                       style={{
                         borderColor: isActive ? '#1b1c1a' : '#e5e7eb',
                         backgroundColor: isActive ? 'rgba(201,169,110,0.03)' : '#ffffff',
@@ -379,7 +398,12 @@ const ProductDetailPage = () => {
                           {v.imgs.map((img, imgIdx) => (
                             <button
                               key={imgIdx}
-                              onClick={() => { setImgLoaded(false); setActiveImgUrl(img); }}
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setImgLoaded(false); 
+                                setActiveImgUrl(img); 
+                                setSelectedAttrs(v.attrs); 
+                              }}
                               className={`w-14 h-16 rounded overflow-hidden border-2 transition ${
                                 activeImgUrl === img ? 'border-gray-900' : 'border-transparent hover:border-gray-300'
                               }`}

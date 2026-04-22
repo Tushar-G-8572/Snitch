@@ -91,6 +91,12 @@ export async function handleEditProduct(req, res) {
     // console.log("productId:", productId);
 
 
+    const product = await productModel.findOne({ _id: productId, seller: sellerId });
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
     let images = [];
     if (req.body.existingImages) {
       const existing = Array.isArray(req.body.existingImages)
@@ -117,11 +123,6 @@ export async function handleEditProduct(req, res) {
       images,
     };
 
-    const product = await productModel.findOne({ _id: productId, seller: sellerId });
-
-    if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
-    }
 
     product.title = req.body.title;
     product.description = req.body.description;
@@ -145,6 +146,13 @@ export async function handleEditVarient(req, res) {
     const { productId } = req.params;
     const sellerId = req.user.id;
 
+    // ── Find and save ──
+    const product = await productModel.findOne({ _id: productId, seller: sellerId });
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
     // ── Parse variants from FormData ──
     if (!req.body.variants) {
       return res.status(400).json({ success: false, message: "No variants data provided" });
@@ -159,7 +167,7 @@ export async function handleEditVarient(req, res) {
         // Preserve existing images
         let variantImages = (
           Array.isArray(v.existingImages) ? v.existingImages :
-          v.existingImages ? [v.existingImages] : []
+            v.existingImages ? [v.existingImages] : []
         ).map(url => ({ url }));
 
         // Upload new images for this variant
@@ -181,12 +189,7 @@ export async function handleEditVarient(req, res) {
       })
     );
 
-    // ── Find and save ──
-    const product = await productModel.findOne({ _id: productId, seller: sellerId });
 
-    if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
-    }
 
     product.varients = varients;
     await product.save();

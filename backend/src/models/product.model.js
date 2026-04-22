@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import priceSchema from "./price.schema.js";
 
 const productSchema = new mongoose.Schema({
  title: {
@@ -14,15 +15,8 @@ const productSchema = new mongoose.Schema({
   required: true
  },
  price: {
-  amount: {
-   type: Number,
-   required: true
-  },
-  currency: {
-   type: String,
-   enum: ["INR", "USD", "GBP", "JPY", "EUR"],
-   default: "INR"
-  }
+  type:priceSchema,
+  required:true
  },
  images: [{
   url: {
@@ -48,14 +42,7 @@ const productSchema = new mongoose.Schema({
     of: String
    },
    price: {
-    amount: {
-     type: Number
-    },
-    currency: {
-     type: String,
-     enum: ["INR", "USD", "GBP", "JPY", "EUR"],
-     default: "INR"
-    }
+    type:priceSchema
    }
   }
  ]
