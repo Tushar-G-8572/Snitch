@@ -48,7 +48,7 @@ const ProductDetailPage = () => {
   const { handleGetProductFromProductId } = useProducts();
 
   /* gallery state */
-  const [activeImg, setActiveImg] = useState(0);
+  const [activeImgUrl, setActiveImgUrl] = useState('');
   const [imgLoaded, setImgLoaded] = useState(false);
 
   /* quantity */
@@ -117,9 +117,7 @@ const ProductDetailPage = () => {
   }, [variants, selectedAttrs, attrKeys]);
 
   /* ── resolve what to display ── */
-  const baseImgs = (p?.images || []).map((img) => img.url || img);
-  const variantImgs = selectedVariant?.imgs?.length ? selectedVariant.imgs : [];
-  const imgs = variantImgs.length ? variantImgs : baseImgs;
+  const baseImgs = useMemo(() => (p?.images || []).map((img) => img.url || img), [p]);
 
   const displayedPrice = selectedVariant?.price?.amount
     ? selectedVariant.price
@@ -128,13 +126,17 @@ const ProductDetailPage = () => {
   const stock = selectedVariant != null ? (selectedVariant.stock ?? 0) : null;
   const outOfStock = stock === 0;
 
-  /* reset image index when image set changes */
+  /* reset image when base images change */
   useEffect(() => {
-    setActiveImg(0);
+    if (baseImgs.length > 0) {
+      setActiveImgUrl(baseImgs[0]);
+    } else {
+      setActiveImgUrl('https://placehold.co/600x700?text=No+Image');
+    }
     setImgLoaded(false);
-  }, [imgs.join(',')]); // eslint-disable-line
+  }, [baseImgs.join(',')]); // eslint-disable-line
 
-  const displayImg = imgs[activeImg] || 'https://placehold.co/600x700?text=No+Image';
+  const displayImg = activeImgUrl || 'https://placehold.co/600x700?text=No+Image';
 
   /* ── handlers ── */
   const handleAttrSelect = (key, value) => {
@@ -199,17 +201,7 @@ const ProductDetailPage = () => {
 
         {/* ── LEFT: Gallery ── */}
         <div className="flex flex-col gap-4 sticky top-6">
-          {/* Variant image badge */}
-          {variantImgs.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span
-                className="text-[10px] font-medium tracking-widest uppercase px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(201,169,110,0.15)', color: '#9c7a3a' }}
-              >
-                Variant Images
-              </span>
-            </div>
-          )}
+
 
           {/* Main Image */}
           <div className="w-full aspect-[4/5] bg-white rounded overflow-hidden relative shadow-sm">
@@ -241,14 +233,14 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Thumbnails */}
-          {imgs.length > 1 && (
+          {baseImgs.length > 1 && (
             <div className="flex gap-2.5 flex-wrap">
-              {imgs.map((url, i) => (
+              {baseImgs.map((url, i) => (
                 <button
                   key={i}
-                  onClick={() => { setImgLoaded(false); setActiveImg(i); }}
+                  onClick={() => { setImgLoaded(false); setActiveImgUrl(url); }}
                   className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${
-                    i === activeImg ? 'border-gray-900' : 'border-transparent'
+                    url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
                   }`}
                 >
                   <img
@@ -297,99 +289,6 @@ const ProductDetailPage = () => {
           {/* Description */}
           <p className="text-sm text-gray-600 leading-relaxed mb-7">{description}</p>
 
-          {/* ════════════════════════════════════════
-              ── Variant Attribute Selectors ──
-          ════════════════════════════════════════ */}
-          {attrKeys.length > 0 && (
-            <div className="mb-7 flex flex-col gap-6">
-              {attrKeys.map((key) => (
-                <div key={key}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-bold text-gray-400 tracking-wider uppercase">
-                      {key}
-                    </p>
-                    <span className="text-xs text-gray-500 font-medium">
-                      Selected: <span className="text-gray-900">{selectedAttrs[key]}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex gap-2.5 flex-wrap">
-                    {attrValues[key].map((val) => {
-                      /* check if this option is currently available with the rest of selected attrs */
-                      const testAttrs = { ...selectedAttrs, [key]: val };
-                      const isAvailable = variants.some((v) =>
-                        Object.entries(testAttrs).every(([k, value]) => v.attrs[k] === value)
-                      );
-                      const isSelected = selectedAttrs[key] === val;
-
-                      return (
-                        <button
-                          key={val}
-                          onClick={() => isAvailable && handleAttrSelect(key, val)}
-                          disabled={!isAvailable}
-                          className="transition-all relative"
-                          style={{
-                            padding: '8px 18px',
-                            border: isSelected
-                              ? '2px solid #1b1c1a'
-                              : '1.5px solid #d1d5db',
-                            backgroundColor: isSelected ? '#1b1c1a' : '#ffffff',
-                            color: isSelected ? '#ffffff' : isAvailable ? '#374151' : '#9ca3af',
-                            fontSize: '13px',
-                            fontWeight: isSelected ? 600 : 400,
-                            cursor: isAvailable ? 'pointer' : 'not-allowed',
-                            borderRadius: '3px',
-                            opacity: isAvailable ? 1 : 0.45,
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected && isAvailable) {
-                              e.currentTarget.style.borderColor = '#6b7280';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected && isAvailable) {
-                              e.currentTarget.style.borderColor = '#d1d5db';
-                            }
-                          }}
-                        >
-                          {val}
-                          {/* Unavailable strike-through */}
-                          {!isAvailable && (
-                            <span
-                              style={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: 0,
-                                right: 0,
-                                height: '1px',
-                                backgroundColor: '#d1d5db',
-                                transform: 'rotate(-15deg)',
-                              }}
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              {/* Stock info */}
-              <div className="flex items-center gap-2">
-                {outOfStock ? (
-                  <span className="text-xs font-semibold text-red-600 tracking-wide">✗ Out of stock</span>
-                ) : stock !== null ? (
-                  <span
-                    className="text-xs font-semibold tracking-wide"
-                    style={{ color: stock <= 5 ? '#b45309' : '#15803d' }}
-                  >
-                    {stock <= 5 ? `⚡ Only ${stock} left!` : `✔ In stock (${stock} units)`}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          )}
-
           {/* Quantity */}
           <div className="mb-7">
             <p className="text-xs font-bold text-gray-400 mb-3 tracking-wider uppercase">Quantity</p>
@@ -434,48 +333,62 @@ const ProductDetailPage = () => {
 
           {/* ── Variants summary strip (shown when variants exist) ── */}
           {variants.length > 0 && (
-            <div
-              className="mb-7 rounded overflow-hidden"
-              style={{ border: '1px solid #e5e7eb' }}
-            >
-              <div
-                className="px-4 py-2.5 text-[10px] font-semibold tracking-widest uppercase"
-                style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280' }}
-              >
-                {variants.length} variant{variants.length !== 1 ? 's' : ''} available
-              </div>
-              <div className="divide-y divide-gray-100">
+            <div className="mb-7">
+              <p className="text-xs font-bold text-gray-400 mb-3 tracking-wider uppercase">
+                {variants.length} Variant{variants.length !== 1 ? 's' : ''} Available
+              </p>
+              <div className="flex flex-col gap-3">
                 {variants.map((v, i) => {
                   const attrStr = Object.entries(v.attrs)
                     .map(([k, val]) => `${k}: ${val}`)
                     .join(' · ');
-                  const isActive = selectedVariant?._id === v._id || (!selectedVariant && i === 0);
+                  const isActive = selectedVariant?._id === v._id;
+
                   return (
                     <div
                       key={v._id || i}
-                      className="flex items-center justify-between px-4 py-2.5 transition"
+                      className="flex flex-col p-4 rounded border transition"
                       style={{
-                        backgroundColor: isActive ? 'rgba(201,169,110,0.06)' : 'transparent',
-                        cursor: 'default',
+                        borderColor: isActive ? '#1b1c1a' : '#e5e7eb',
+                        backgroundColor: isActive ? 'rgba(201,169,110,0.03)' : '#ffffff',
                       }}
                     >
-                      <span className="text-xs text-gray-700">{attrStr || `Variant ${i + 1}`}</span>
-                      <div className="flex items-center gap-3">
-                        {v.price?.amount && (
-                          <span className="text-xs font-semibold text-gray-900">
-                            {formatPrice(v.price.amount, v.price.currency)}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-gray-900">{attrStr || `Variant ${i + 1}`}</span>
+                        <div className="flex items-center gap-3">
+                          {v.price?.amount && (
+                            <span className="text-sm font-bold text-gray-900">
+                              {formatPrice(v.price.amount, v.price.currency)}
+                            </span>
+                          )}
+                          <span
+                            className="text-[10px] font-medium px-2.5 py-1 rounded-full"
+                            style={{
+                              backgroundColor: v.stock > 0 ? '#dcfce7' : '#fee2e2',
+                              color: v.stock > 0 ? '#15803d' : '#dc2626',
+                            }}
+                          >
+                            {v.stock > 0 ? `${v.stock} in stock` : 'Sold out'}
                           </span>
-                        )}
-                        <span
-                          className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: v.stock > 0 ? '#dcfce7' : '#fee2e2',
-                            color: v.stock > 0 ? '#15803d' : '#dc2626',
-                          }}
-                        >
-                          {v.stock > 0 ? `${v.stock} in stock` : 'Sold out'}
-                        </span>
+                        </div>
                       </div>
+                      
+                      {/* Variant Images */}
+                      {v.imgs?.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {v.imgs.map((img, imgIdx) => (
+                            <button
+                              key={imgIdx}
+                              onClick={() => { setImgLoaded(false); setActiveImgUrl(img); }}
+                              className={`w-14 h-16 rounded overflow-hidden border-2 transition ${
+                                activeImgUrl === img ? 'border-gray-900' : 'border-transparent hover:border-gray-300'
+                              }`}
+                            >
+                              <img src={img} alt={`variant-${imgIdx}`} className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -81,23 +81,6 @@ export async function handleGetRelatedProduct(req, res) {
   }
 }
 
-/*
-description: "Over Sized Hooodie"
-existingImages: "https://ik.imagekit.io/tusharG/Snitch/tanya-layko-QINaeQQHghQ-unsplash_NPWPURBrm.jpg"
-priceAmount: "4999"
-priceCurrency: "EUR"
-title: "winter wear"
-variantImages_0: File
-lastModified: 1776402514263
-lastModifiedDate: Fri Apr 17 2026 10:38:34 GMT+0530 (India Standard Time) {}
-name: "alex-haigh-fEt6Wd4t4j0-unsplash.jpg"
-size: 871551
-type: "image/jpeg"
-webkitRelativePath: ""
-[[Prototype]]: File
-variants: "[{\"stock\":2,\"priceAmount\":5999,\"priceCurrency\":\"INR\",\"attributes\":{\"44\":\"xl\"},\"existingImages\":[]}]"
-*/
-
 export async function handleEditProduct(req, res) {
   try {
     const { productId } = req.params;
@@ -215,3 +198,4 @@ export async function handleEditVarient(req, res) {
     return res.status(500).json({ success: false, message: "Error while editing variants" });
   }
 }
+
