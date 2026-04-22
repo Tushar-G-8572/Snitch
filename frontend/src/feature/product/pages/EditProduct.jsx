@@ -390,7 +390,7 @@ const VariantCard = ({ variant, index, onChange, onRemove, inputClass, inputStyl
 const EditProduct = () => {
     const { productId } = useParams();
     const navigate = useNavigate();
-    const { handleGetProductFromProductId } = useProducts();
+    const { handleGetProductFromProductId, handleEditProduct, handleEditProductVarient } = useProducts();
 
     /* ── base product form state ── */
     const [formData, setFormData] = useState({
@@ -416,7 +416,7 @@ const EditProduct = () => {
     }, [productId]);
 
     const product = useSelector(state => state.product.products);
-    console.log(product);
+    // console.log(product);
 
     /* pre-fill once product arrives */
     useEffect(() => {
@@ -522,24 +522,30 @@ const EditProduct = () => {
             existingImages.forEach(url => data.append('existingImages', url));
             newImages.forEach(img => data.append('product', img.file));
 
-            /* serialize variants */
-            const serializedVariants = variants.map(v => ({
-                stock: Number(v.stock) || 0,
-                priceAmount: v.priceAmount ? Number(v.priceAmount) : undefined,
-                priceCurrency: v.priceCurrency,
-                attributes: Object.fromEntries(v.attributes.filter(a => a.key).map(a => [a.key, a.value])),
-                existingImages: v.existingImages,
-            }));
-            data.append('variants', JSON.stringify(serializedVariants));
-            variants.forEach((v, vi) => {
-                v.newImages.forEach(img => data.append(`variantImages_${vi}`, img.file));
-            });
+            await handleEditProduct(productId, data)
 
-            // TODO: call handleUpdateProduct(productId, data)
-            console.log('EditProduct submit — base:', Object.fromEntries(data));
-            console.log('EditProduct submit — variants:', serializedVariants);
-            alert('Product updated! (wire API)');
-            navigate('/seller/dashboard');
+            /* serialize variants */
+            if (variants.length > 0) {
+                const variantData = new FormData();
+
+                const serializedVariants = variants.map(v => ({
+                    stock: Number(v.stock) || 0,
+                    priceAmount: v.priceAmount ? Number(v.priceAmount) : undefined,
+                    priceCurrency: v.priceCurrency,
+                    attributes: Object.fromEntries(
+                        v.attributes.filter(a => a.key).map(a => [a.key, a.value])
+                    ),
+                    existingImages: v.existingImages,
+                }));
+
+                variantData.append('variants', JSON.stringify(serializedVariants));
+                variants.forEach((v, vi) => {
+                    v.newImages.forEach(img => variantData.append(`variantImages_${vi}`, img.file));
+                });
+
+                await handleEditProductVarient(productId,variantData);
+            }
+            // navigate('/seller/dashboard');
         } catch (err) {
             console.error('Failed to update product', err);
         } finally {
