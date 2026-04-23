@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useProducts } from '../hooks/useProducts';
 import { useParams, useNavigate } from 'react-router';
+import AddToCartPage from './AddToCardPage';
+import { useCart } from '../hooks/useCart';
 
 /* ─── helpers ──────────────────────────────────────────── */
 const formatPrice = (amount, currency = 'INR') =>
@@ -46,11 +48,11 @@ const ProductDetailPage = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { handleGetProductFromProductId } = useProducts();
+  const {handleAddToCart}  = useCart();
 
   /* gallery state */
   const [activeImgUrl, setActiveImgUrl] = useState('');
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [price,setPrice] = useState(0);
 
   /* quantity */
   const [quantity, setQuantity] = useState(1);
@@ -97,6 +99,7 @@ const ProductDetailPage = () => {
     });
     return map;
   }, [attrKeys, variants]);
+
 
   /* ── seed selectedAttrs once attrKeys are known ── */
   useEffect(() => {
@@ -166,6 +169,26 @@ const ProductDetailPage = () => {
     );
   }
 
+  
+  const handleAddToCartFn = async (product, selectedVariant, activeImgUrl) => {
+    if (!product) return;
+
+    // Construct the payload required for the cart
+    const cartItem = {
+      productId: product._id,
+      variantId: selectedVariant ? selectedVariant._id : null,
+      imageId: activeImgUrl, // Tracking the specific image selected
+      quantity: quantity,    // Quantity selected by the user
+      attributes: selectedAttrs, // e.g., Size, Color
+      price: selectedVariant?.price?.amount || product?.price,
+    };
+
+    // console.log("Add to Cart Payload:", cartItem);
+    await handleAddToCart(cartItem);
+
+    navigate(`/cart-items`);
+    
+  };
   /* ── no product guard ── */
   if (!p) {
     return (
@@ -189,12 +212,22 @@ const ProductDetailPage = () => {
     <div className="min-h-screen bg-gray-50 font-sans pb-20 text-gray-700">
 
       {/* Breadcrumb */}
-      <nav className="max-w-5xl mx-auto px-10 py-5 text-xs text-gray-600 flex items-center gap-1">
-        <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate('/')}>Home</span>
+      <nav className="w-full flex justify-between items-center ">
+        <div className=' px-10 py-5 text-xs text-gray-600 flex items-center gap-1'>
+          <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate('/')}>Home</span>
         <span className="text-gray-400 px-1"> / </span>
         <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate(-1)}>Products</span>
         <span className="text-gray-400 px-1"> / </span>
         <span className="text-gray-900 font-medium">{title || 'Product'}</span>
+        </div>
+        <div className="right flex text-sm text-gray-600 jusity-between items-center gap-5 mr-10 ">
+          <div className="add-to-cart cursor-pointer hover:text-gray-900 transition ">
+            <span className="text-xl">🛒</span>
+          </div>
+          <div className="profile cursor-pointer hover:text-gray-900 transition ">
+            <span>profile</span>
+          </div>
+        </div>
       </nav>
 
       {/* Main Grid */}
@@ -239,7 +272,7 @@ const ProductDetailPage = () => {
               {baseImgs.map((url, i) => (
                 <button
                   key={i}
-                  onClick={() => { setImgLoaded(false); setActiveImgUrl(url); setSelectedAttrs(product) }}
+                  onClick={() => { setImgLoaded(false); setActiveImgUrl(url); setSelectedAttrs(product);  }}
                   className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${
                     url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
                   }`}
@@ -326,24 +359,24 @@ const ProductDetailPage = () => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col gap-3 mb-7">
-            <button
-              className="w-full py-4 border-2 border-gray-900 bg-transparent text-gray-900 text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-900 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={outOfStock}
-            >
-              <span className="mr-2">🛒</span>
-              ADD TO CART
-            </button>
-            <button
-              onClick={handleBuyNow}
-              disabled={outOfStock}
-              className="w-full py-4 border-2 border-gray-900 bg-gray-900 text-white text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              BUY NOW
-            </button>
-          </div>
+                <div className="flex flex-col gap-3 mb-7">
+                <button onClick={() => handleAddToCartFn(p, selectedVariant, activeImgUrl)}
+                  className="w-full py-4 border-2 border-gray-900 bg-transparent text-gray-900 text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-900 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={outOfStock}
+                >
+                  <span className="mr-2">🛒</span>
+                  ADD TO CART
+                </button>
+                <button
+                  onClick={handleBuyNow}
+                  disabled={outOfStock}
+                  className="w-full py-4 border-2 border-gray-900 bg-gray-900 text-white text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  BUY NOW
+                </button>
+                </div>
 
-          {/* ── Variants summary strip (shown when variants exist) ── */}
+                {/* ── Variants summary strip (shown when variants exist) ── */}
           {variants.length > 0 && (
             <div className="mb-7">
               <p className="text-xs font-bold text-gray-400 mb-3 tracking-wider uppercase">

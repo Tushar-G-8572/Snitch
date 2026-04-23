@@ -5,6 +5,7 @@ import passport from 'passport';
 import './config/google.config.js';
 import cookieParser from 'cookie-parser'
 import productRouter from './routers/product.routes.js';
+import cartRouter from './routers/cart.routes.js';
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.use(passport.initialize());
 
 app.use('/api/auth', authRouter);
 app.use('/api/product',productRouter);
+app.use('/api/cart',cartRouter);
 
 export default app;
