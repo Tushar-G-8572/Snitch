@@ -7,7 +7,7 @@ import Dashboard from "../feature/product/pages/DashBoard";
 import Home from "../feature/product/pages/HomePage";
 import Protected from "../feature/product/components/Protected";
 import ProductDetailPage from "../feature/product/components/ProductDetailPage";
-import AddToCartPage from "../feature/product/components/AddToCardPage";
+import AddToCartPage from "../feature/product/pages/AddToCartPage";
 
 export const router = createBrowserRouter([
     {

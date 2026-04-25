@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useProducts } from '../hooks/useProducts';
 import { useParams, useNavigate } from 'react-router';
-import AddToCartPage from './AddToCardPage';
+import AddToCartPage from '../pages/AddToCartPage';
 import { useCart } from '../hooks/useCart';
 
 /* ─── helpers ──────────────────────────────────────────── */
@@ -175,18 +175,18 @@ const ProductDetailPage = () => {
 
     // Construct the payload required for the cart
     const cartItem = {
-      productId: product._id,
+      productId:product._id,
       variantId: selectedVariant ? selectedVariant._id : null,
-      imageId: activeImgUrl, // Tracking the specific image selected
+      imageUrl: activeImgUrl, // Tracking the specific image selected
       quantity: quantity,    // Quantity selected by the user
       attributes: selectedAttrs, // e.g., Size, Color
       price: selectedVariant?.price?.amount || product?.price,
     };
 
-    // console.log("Add to Cart Payload:", cartItem);
+    console.log("Add to Cart Payload:", cartItem);
     await handleAddToCart(cartItem);
 
-    navigate(`/cart-items`);
+    // navigate(`/cart-items`);
     
   };
   /* ── no product guard ── */
@@ -221,7 +221,8 @@ const ProductDetailPage = () => {
         <span className="text-gray-900 font-medium">{title || 'Product'}</span>
         </div>
         <div className="right flex text-sm text-gray-600 jusity-between items-center gap-5 mr-10 ">
-          <div className="add-to-cart cursor-pointer hover:text-gray-900 transition ">
+          <div onClick={()=>{navigate('/cart-items')}}
+           className="add-to-cart cursor-pointer hover:text-gray-900 transition ">
             <span className="text-xl">🛒</span>
           </div>
           <div className="profile cursor-pointer hover:text-gray-900 transition ">

@@ -1,138 +1,95 @@
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
+import { stockInProduct } from "../dao/product.dao.js";
 
 
-export async function addToCart(req, res) {
-    try {
-        const userId = req.user.id;
-        const { productId } = req.params;
-        const ItemDetails = req.body; // contains imageId, quantity, attributes, price
-        const varientId = ItemDetails.variantId
+export async function addToCart(req,res) {
+    const userId = req.user?.id;
+    const {productId} = req.params;
+    const {variantId,quantity} = req.body;
 
-        let product;
-        if (varientId) {
-            product = await productModel.findOne({
-                _id: productId,
-                "varients._id": varientId,
-            });
+    let product;
+
+    if(variantId){
+        product = await productModel.findOne({
+            _id:productId,
+            "varients._id":variantId
+        })
+    }else{
+        product = await productModel.findOne({_id:productId});
+    }
+
+    if (!product) {
+        return res.status(404).json({
+            message: "Product or variant not found",
+            success: false
+        })
+    }
+
+    const stock = await stockInProduct(productId,variantId);
+    
+    const cart = (await cartModel.findOne({user:userId})) || (await cartModel.create({user:userId}));
+
+    const isProductAlreadyInCart = cart.items.some(item => item.product.toString() === productId && item.varient?.toString() === variantId);
+
+    if(isProductAlreadyInCart){
+        const quantityInCart = cart.items.find(item => item.product.toString() === productId && item.varient?._id.toString() === variantId).quantity
+        if(quantityInCart + quantity > stock){
+            return res.status(400).json({success:false, message: `Only ${stock} items left in stock. and you already have ${quantityInCart} items in your cart`,})
         }
-        else {
-            product = await productModel.findOne({ _id: productId });
-        }
-
-        if (!product) {
-            return res.status(404).json({ success: false, message: "Product not found" });
-        }
-
-        // Find the specific variant
-        let selectedVarient;
-        if (varientId) {
-            selectedVarient = product.varients.find(
-                (v) => v._id.toString() === varientId
-            );
-
-            if (!selectedVarient) {
-                return res.status(404).json({ success: false, message: "Variant not found" });
-            }
-        }
-        const cartItem = {
-            userId,
-            productId,
-            varientId,
-            title: product.title,
-            image: selectedVarient?.images[0].url || product.images[0].url,
-            quantity: ItemDetails.quantity,
-            attributes: ItemDetails.attributes,  // { color: 'Black', Size: 'XXl' }
-            price: ItemDetails.price,
-        };
-
-        const cart = (await cartModel.findOne({ user: userId })) || (await cartModel.create({
-            user: userId,
-        }))
-
-        const isProductInCart = cart.items.some(
-            item => item.product.toString() === cartItem.productId
-                && item.varient?.toString() === cartItem.varientId  // was item.variant
-        )
-
-        if (isProductInCart) {
-            const quantityInCart = cart.items.find(item => item.product.toString() === cartItem.productId && item.varient?.toString() === cartItem.varientId).quantity
-            if (quantityInCart + cartItem.quantity > selectedVarient.stock) {
-                return res.status(400).json({
-                    message: `Only ${selectedVarient.stock} items left in stock. and you already have ${quantityInCart} items in your cart`,
-                    success: false
-                })
-            }
-
-            await cartModel.findOneAndUpdate(
-                { user: userId, "items.product": cartItem.productId, "items.varient": cartItem?.varientId },
-                { $inc: { "items.$.quantity": ItemDetails.quantity } },
-                { new: true }
+        
+        if(variantId){
+            await cartModel.findOneAndUpdate({user:userId,"items.product":productId,"items.varient":variantId},
+                { $inc: {"items.$.quantity":quantity}},
+                {new:true},
             )
-
-            return res.status(200).json({
-                message: "Cart updated successfully",
-                success: true,
-                cartItem
-            })
-
+        }else{
+            await cartModel.findOneAndUpdate({user:userId,"items.product":productId},
+                { $inc: {"items.$.quantity":quantity}},{new:true})
+            }
+            
+            return res.status(200).json({success:true,message:"Cart Updated Successfully"})
         }
 
-        if (cartItem.quantity > product.stock) {
+        if(quantity > stock){
             return res.status(400).json({
-                message: `Only ${selectedVarient.stock} items left in stock`,
-                success: false
-            })
+            message: `Only ${stock} items left in stock`,
+            success: false
+        })
         }
 
         cart.items.push({
-            product: cartItem.productId,
-            varient: cartItem?.varientId || cartItem.productId,
-            quantity: cartItem.quantity,
-            price: {
-                amount: ItemDetails.price?.amount || ItemDetails.price
-            }
-        })
+        product: productId,
+        variant: variantId,
+        quantity,
+        price: (variantId)
+                ? (product.varients.find(v => v._id.toString() === variantId)?.price || 0) 
+                : product.price
+    })
 
-        await cart.save()
+    await cart.save()
 
-        return res.status(200).json({
-            success: true,
-            message: "Item added in cart",
-            cartItem,
-        });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(400).json({ success: false, message: "Error while adding Items in Cart" });
-    }
+    return res.status(200).json({
+        message: "Product added to cart successfully",
+        success: true
+    })    
 }
 
-export async function getAddToCartProduct(req, res) {
-    try {
+export async function getAddToCartProduct(req,res) {
+    try{
 
-        const userId = req.user.id;
+        const userId = req.user?.id
+        
+        const products = await cartModel.find({user:userId});
 
-        const cart = await cartModel
-            .findOne({ user: userId })
-            .populate({
-                path: "items.product",
-                select: "images",   // pick only what you need
-            })
-            .populate({
-                path: "items.product.varients",
-                select: "images",
-            });
-
-        if (!cart) {
-            return res.status(200).json({ success: true, message: "Your cart is Empty" })
-        }
-        console.log(cart);
-        return res.status(201).json({ success: true, message: "Cart Items, fetched", cart })
-
-
-    } catch (error) {
-        console.error(error);
-        return res.status(400).json({ success: false, message: "Error while getting cart Items" });
+    if(!products){
+        return res.status(200).json({success:true,message:"Your cart is empty"})
     }
+
+    return res.status(200).json({success:true,message:"cart Items fetched",cartData:products})
+}catch(error){
+    console.error(error);
+    return res.status(400).json({success:false,message:"error while getting cart elements"})
+}
+    
 }
