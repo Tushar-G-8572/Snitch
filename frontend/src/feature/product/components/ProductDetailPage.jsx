@@ -56,7 +56,7 @@ const ProductDetailPage = () => {
 
   /* quantity */
   const [quantity, setQuantity] = useState(1);
-
+  const [imageId,setImageId] = useState(null);
   /**
    * selectedAttrs — tracks one chosen value per attribute key.
    * e.g. { Size: 'XL', Color: 'Black' }
@@ -173,6 +173,7 @@ const ProductDetailPage = () => {
   const handleAddToCartFn = async (product, selectedVariant, activeImgUrl) => {
     if (!product) return;
 
+    console.log(imageId)
     // Construct the payload required for the cart
     const cartItem = {
       productId:product._id,
@@ -273,7 +274,7 @@ const ProductDetailPage = () => {
               {baseImgs.map((url, i) => (
                 <button
                   key={i}
-                  onClick={() => { setImgLoaded(false); setActiveImgUrl(url); setSelectedAttrs(product);  }}
+                  onClick={() => { setImgLoaded(false);setActiveImgUrl(url); setSelectedAttrs(product);  }}
                   className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${
                     url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
                   }`}

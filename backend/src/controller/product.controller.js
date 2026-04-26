@@ -8,7 +8,7 @@ export async function handleCreateProduct(req, res) {
     if (role !== "Seller") {
       return res.status(403).json({ success: false, message: "Unauthorised" })
     }
-    const { title, description, priceAmount, priceCurrency } = req.body
+    const { title, description, priceAmount, priceCurrency,stock } = req.body
     console.log(title, description, priceAmount, priceCurrency)
     const images = await Promise.all(req.files.map(async (file) => {
       return await storeImage(file)
@@ -22,7 +22,8 @@ export async function handleCreateProduct(req, res) {
         currency: priceCurrency
       },
       images,
-      seller: id
+      seller: id,
+      stock
     })
 
     return res.status(201).json({ success: true, message: "Product lists successfully", products: productData })

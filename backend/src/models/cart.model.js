@@ -18,6 +18,10 @@ const cartSchema = new mongoose.Schema({
     type:mongoose.Schema.Types.ObjectId,
     ref:'product.varients'
    },
+   productImageId:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"product.images"
+   },
    quantity:{
     type:Number,
     default:1
