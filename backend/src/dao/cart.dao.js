@@ -1,7 +1,11 @@
-  [
+import cartModel from "../models/cart.model.js";
+import mongoose from "mongoose";
+
+export async function getCartDetail(userId) {
+  let cart = (await cartModel.aggregate( [
     {
       $match: {
-        user: ObjectId('69da2214c1040fd18047204c')
+        user: new mongoose.Types.ObjectId(userId)
       }
     },
     { $unwind: { path: '$items' } },
@@ -98,4 +102,6 @@
         }
       }
     }
-  ]
+  ]))[0]
+  return cart
+}

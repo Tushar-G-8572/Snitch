@@ -2,6 +2,7 @@ import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
 import { stockInProduct } from "../dao/product.dao.js";
 import mongoose from "mongoose";
+import { getCartDetail } from "../dao/cart.dao.js";
 
 
 export async function addToCart(req, res) {
@@ -102,111 +103,8 @@ export async function addToCart(req, res) {
 export async function getAddToCartProduct(req,res) {
     try{
 
-        const userId = req.user?.id
-        
-        // const products = await cartModel.find({user:userId})
-
-        const products = await cartModel.aggregate(  [
-    {
-      $match: {
-        user: new mongoose.Types.ObjectId(userId)
-      }
-    },
-    { $unwind: { path: '$items' } },
-    {
-      $lookup: {
-        from: 'products',
-        localField: 'items.product',
-        foreignField: '_id',
-        as: 'items.product'
-      }
-    },
-    { $unwind: { path: '$items.product' } },
-    {
-      $set: {
-        'items.product.images': {
-          $cond: {
-            if: {
-              $ne: ['$items.productImageId', null]
-            },
-            then: {
-              $filter: {
-                input: '$items.product.images',
-                as: 'img',
-                cond: {
-                  $eq: [
-                    '$$img._id',
-                    '$items.productImageId'
-                  ]
-                }
-              }
-            },
-            else: []
-          }
-        }
-      }
-    },
-    {
-      $set: {
-        'items.product.varients': {
-          $cond: {
-            if: { $ne: ['$items.varient', null] },
-            then: {
-              $filter: {
-                input: '$items.product.varients',
-                as: 'v',
-                cond: {
-                  $eq: [
-                    '$$v._id',
-                    '$items.varient'
-                  ]
-                }
-              }
-            },
-            else: []
-          }
-        }
-      }
-    },
-    {
-      $unwind: {
-        path: '$items.product.images',
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $unwind: {
-        path: '$items.product.varients',
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $set: {
-        'items.trustedPrice': {
-          $cond: {
-            if: { $ne: ['$items.varient', null] },
-            then: '$items.product.varients.price.amount',
-            else: '$items.product.price.amount'
-          }
-        }
-      }
-    },
-    {
-      $group: {
-        _id: '$_id',
-        user: { $first: '$user' },
-        items: { $push: '$items' },
-        total: {
-          $sum: {
-            $multiply: [
-              '$items.trustedPrice',
-              '$items.quantity'
-            ]
-          }
-        }
-      }
-    }
-  ])
+        const userId = req.user?.id        
+        const products = await getCartDetail(userId);
 
     if(!products){
         return res.status(200).json({success:true,message:"Your cart is empty"})
@@ -218,4 +116,30 @@ export async function getAddToCartProduct(req,res) {
     return res.status(400).json({success:false,message:"error while getting cart elements"})
 }
     
+}
+
+export async function removeAddToCartProduct(req,res) {
+  try{
+
+    const {itemId} = req.params;
+    const userId = req.user.id
+    
+  if(!itemId) return res.status(400).json({success:false,message:"Item Id requires"});
+  console.log(itemId);
+
+  const cart = await cartModel.findOne({user:userId})
+
+  const safeItems = cart.items.filter(item => item._id.toString() !== itemId);
+  cart.items = safeItems;
+  await cart.save();
+
+  res.status(200).json({success:true,message:"Cart item removed",cart})
+  
+}catch(error){
+  console.log(error);
+  return res.status(400).json({success:false,message:"Error while removing item"})
+}
+
+
+
 }

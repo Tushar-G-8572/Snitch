@@ -9,7 +9,7 @@ export async function handleCreateProduct(req, res) {
       return res.status(403).json({ success: false, message: "Unauthorised" })
     }
     const { title, description, priceAmount, priceCurrency,stock } = req.body
-    console.log(title, description, priceAmount, priceCurrency)
+    console.log(title, description, priceAmount, priceCurrency,stock)
     const images = await Promise.all(req.files.map(async (file) => {
       return await storeImage(file)
     }))

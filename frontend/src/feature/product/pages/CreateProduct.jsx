@@ -14,6 +14,7 @@ const CreateProduct = () => {
         description: '',
         priceAmount: '',
         priceCurrency: 'INR',
+        stock: 0
     });
     const [images, setImages] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
@@ -65,11 +66,12 @@ const CreateProduct = () => {
             data.append('description', formData.description);
             data.append('priceAmount', formData.priceAmount);
             data.append('priceCurrency', formData.priceCurrency);
+            data.append('stock', formData.stock);
             images.forEach(img => data.append('product', img.file));
 
             console.log(Object.fromEntries(data));
             const flag = await handleCreateProduct(data);
-            if(flag){
+            if (flag) {
                 navigate('/');
             }
         } catch (err) {
@@ -228,6 +230,19 @@ const CreateProduct = () => {
                                             </select>
                                         </div>
                                     </div>
+                                </div>
+                                {/* {Stock} */}
+                                <div className='flex flex-col gap-3'>
+                                    <span className="text-[10px] uppercase tracking-[0.2em] font-medium" style={{ color: '#7A6E63' }}>Stock</span>
+                                    <input
+                                        name='stock'
+                                        value={formData.stock}
+                                        required
+                                        onInput={handleChange}
+                                        style={inputStyle}
+                                        onFocus={handleFocus}
+                                        onBlur={handleBlur}
+                                        className='outline-none bg-transparent border-b-2 ' type="Number" placeholder='' />
                                 </div>
                             </div>
 

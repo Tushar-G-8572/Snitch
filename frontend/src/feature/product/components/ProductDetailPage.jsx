@@ -172,7 +172,7 @@ const ProductDetailPage = () => {
   
   const handleAddToCartFn = async (product, selectedVariant, activeImgUrl) => {
     if (!product) return;
-
+    if(!user) navigate('/login');
     console.log(imageId)
     // Construct the payload required for the cart
     const cartItem = {

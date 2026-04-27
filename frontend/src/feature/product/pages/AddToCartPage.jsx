@@ -1,207 +1,467 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 
-const formatPrice = (amount, currency = 'INR') =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
+const fmt = (amount, currency = 'INR') =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 
+/* ── helper: pick the best image for a cart item ── */
+function getItemImage(item) {
+  // Case 1: variant item — use varients.images[]
+  if (item.varient && item.product?.varients?.images?.length > 0) {
+    return item.product.varients.images[0].url;
+  }
+  // Case 2: non-variant item — product.images is a single object
+  if (item.product?.images?.url) {
+    return item.product.images.url;
+  }
+  // Case 3: images array fallback
+  if (Array.isArray(item.product?.images) && item.product.images[0]?.url) {
+    return item.product.images[0].url;
+  }
+  return 'https://placehold.co/160x200?text=No+Image';
+}
+
+/* ── AI Negotiate Modal ── */
+function NegotiateModal({ total, onClose }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState('');
+
+  const negotiate = () => {
+    setLoading(true);
+    setTimeout(() => {
+      const discount = total > 10000 ? '15%' : total > 7500 ? '10%' : '7%';
+      setResult(
+        `🎉 Great news! Based on your cart value of ${fmt(total)}, you qualify for a ${discount} discount. Use code SNITCH${discount.replace('%', '')} at checkout. Valid for the next 24 hours.`
+      );
+      setLoading(false);
+    }, 1800);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: '1.25rem', maxWidth: '440px', width: '100%',
+        padding: '2rem', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative'
+      }}>
+        <button onClick={onClose} style={{
+          position: 'absolute', top: '1rem', right: '1rem',
+          background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#9ca3af'
+        }}>✕</button>
+
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🤖</div>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>
+            AI Price Negotiator
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+            Our AI will analyze your cart and negotiate the best discount with the seller.
+          </p>
+        </div>
+
+        <div style={{
+          background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
+          border: '1px solid #bbf7d0', borderRadius: '0.75rem',
+          padding: '0.75rem 1rem', marginBottom: '1.25rem', textAlign: 'center'
+        }}>
+          <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 600 }}>Cart Value</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#166534' }}>{fmt(total)}</div>
+        </div>
+
+        {result ? (
+          <div style={{
+            background: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
+            border: '1px solid #fde68a', borderRadius: '0.75rem',
+            padding: '1rem', fontSize: '0.875rem', color: '#92400e', lineHeight: 1.6, marginBottom: '1rem'
+          }}>
+            {result}
+          </div>
+        ) : (
+          <button
+            onClick={negotiate}
+            disabled={loading}
+            style={{
+              width: '100%', padding: '0.875rem',
+              background: loading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+              color: '#fff', border: 'none', borderRadius: '0.75rem',
+              fontSize: '0.9rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
+              letterSpacing: '0.03em', transition: 'opacity 0.2s', marginBottom: '0.75rem'
+            }}
+          >
+            {loading ? '🔄 Negotiating...' : '✨ Negotiate Now'}
+          </button>
+        )}
+
+        <button onClick={onClose} style={{
+          width: '100%', padding: '0.75rem',
+          background: 'none', border: '1.5px solid #e5e7eb', borderRadius: '0.75rem',
+          fontSize: '0.85rem', fontWeight: 600, color: '#374151', cursor: 'pointer'
+        }}>
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════ */
 const AddToCartPage = () => {
   const navigate = useNavigate();
-  const { handleGetAddToCartProduct } = useCart();
+  const { handleGetAddToCartProduct, handleUpdateQuantity, handleRemoveAddToCart } = useCart();
   const cartProducts = useSelector(state => state.cart.cartProducts);
   const loading = useSelector(state => state.cart.loading);
+  const [showNegotiate, setShowNegotiate] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
-  useEffect(() => {
-    handleGetAddToCartProduct();
-  }, []);
+  useEffect(() => { handleGetAddToCartProduct(); }, []);
+  console.log(cartProducts)
 
   const cart = Array.isArray(cartProducts) && cartProducts.length > 0 ? cartProducts[0] : cartProducts;
   const items = cart?.items || [];
 
-  const subtotal = items.reduce((acc, item) => acc + (item.price?.amount || 0), 0);
+  // Use trustedPrice * quantity for correct totals
+  const total = items.reduce((acc, item) => acc + (item.trustedPrice || item.price?.amount || 0) * (item.quantity || 1), 0);
 
-  if (loading && !cart) {
+  const onDecrement = (item) => {
+    if (item.quantity <= 1) return;
+    console.log(item._id, item.quantity - 1)
+    // handleUpdateQuantity(item._id, item.quantity - 1);
+  };
+
+  const onIncrement = (item) => {
+    console.log(item._id, item.quantity + 1)
+    // handleUpdateQuantity(item._id, item.quantity + 1);
+  };
+
+  const onRemove = async (itemId) => {
+    // setRemovingId(itemId);
+    console.log(itemId);
+    await handleRemoveAddToCart(itemId);
+    await handleGetAddToCartProduct()
+    // setRemovingId(null);
+  };
+
+  /* ── Skeleton loader ── */
+  if (loading && items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 font-sans pb-20 text-gray-700">
-         <div className="max-w-5xl mx-auto px-10 py-6">
-            <div className="h-10 w-48 bg-gray-200 rounded animate-pulse mb-8"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-               <div className="lg:col-span-2 space-y-6">
-                 {[1, 2].map(i => <div key={i} className="h-40 bg-gray-200 rounded animate-pulse"></div>)}
-               </div>
-               <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-         </div>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter','Segoe UI',sans-serif", padding: '2.5rem 1.25rem' }}>
+        <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+          <div style={{ height: '2.5rem', width: '12rem', background: '#e5e7eb', borderRadius: '0.5rem', marginBottom: '2rem', animation: 'pulse 1.5s infinite' }} />
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ height: '9rem', background: '#e5e7eb', borderRadius: '1rem', marginBottom: '1rem', animation: 'pulse 1.5s infinite' }} />
+          ))}
+        </div>
       </div>
     );
   }
 
+  /* ── Empty cart ── */
+  if (!loading && items.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter','Segoe UI',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🛒</div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', marginBottom: '0.5rem' }}>Your cart is empty</h2>
+          <p style={{ color: '#6b7280', marginBottom: '2rem', fontSize: '0.9rem' }}>Looks like you haven't added anything yet.</p>
+          <button
+            onClick={() => navigate('/')}
+            style={{ padding: '0.875rem 2.5rem', background: '#111827', color: '#fff', border: 'none', borderRadius: '0.75rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', letterSpacing: '0.05em' }}
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isHighValue = total >= 5000;
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans pb-20 text-gray-700">
-      {/* Breadcrumb */}
-      <nav className="w-full flex justify-between items-center">
-        <div className='px-10 py-5 text-xs text-gray-600 flex items-center gap-1'>
-          <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate('/')}>Home</span>
-          <span className="text-gray-400 px-1"> / </span>
-          <span className="text-gray-900 font-medium">Cart Items</span>
+    <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter','Segoe UI',sans-serif", color: '#111827' }}>
+      {showNegotiate && <NegotiateModal total={total} onClose={() => setShowNegotiate(false)} />}
+
+      {/* ── Header ── */}
+      <nav style={{ background: '#fff', borderBottom: '1px solid #f3f4f6', padding: '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#6b7280' }}>
+          <span style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>Home</span>
+          <span>/</span>
+          <span style={{ color: '#111827', fontWeight: 600 }}>Cart</span>
         </div>
-        <div className="flex text-sm text-gray-600 justify-between items-center gap-5 mr-10">
-          <div className="cursor-pointer hover:text-gray-900 transition">
-            <span>profile</span>
-          </div>
-        </div>
+        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em', color: '#111827' }}>SNITCH</span>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-10 py-6">
-        <h1 className="text-3xl font-bold text-gray-900 leading-tight mb-8 tracking-tight">
-          Your Cart {items.length > 0 && <span className="text-gray-400 text-xl font-normal">({items.length} items)</span>}
+      <div style={{ maxWidth: '1080px', margin: '0 auto', padding: '2rem 1.25rem' }}>
+        <h1 style={{ fontSize: '1.9rem', fontWeight: 800, marginBottom: '0.25rem', letterSpacing: '-0.03em' }}>
+          Your Cart
         </h1>
+        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '2rem' }}>
+          {items.length} item{items.length !== 1 ? 's' : ''} in your bag
+        </p>
 
-        {items.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded overflow-hidden shadow-sm border border-gray-100 flex flex-col items-center justify-center">
-             <div className="text-7xl mb-6 opacity-30">🛒</div>
-             <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Your cart is empty</h2>
-             <p className="text-sm text-gray-500 mb-8">Looks like you haven't added anything to your cart yet.</p>
-             <button 
-               onClick={() => navigate('/')} 
-               className="px-8 py-4 border-2 border-gray-900 bg-gray-900 text-white text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-800"
-             >
-               Continue Shopping
-             </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
-            {/* Left: Cart Items */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
-              {items.map((item, index) => {
-                // Handle unpopulated product ID gracefully
-                const isPopulated = typeof item.product === 'object' && item.product !== null;
-                const productId = isPopulated ? item.product._id : item.product;
-                const title = isPopulated ? item.product.title : `Product ID: ${productId}`;
-                
-                let displayImg = 'https://placehold.co/150x200?text=No+Image';
-                if (item.imageUrl) {
-                    displayImg = item.imageUrl;
-                } else if (isPopulated && item.product.images?.length > 0) {
-                    displayImg = item.product.images[0].url || item.product.images[0];
-                }
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) 340px', gap: '2rem', alignItems: 'start' }}>
 
-                return (
-                  <div key={item._id || index} className="flex gap-6 p-5 bg-white rounded shadow-sm border border-gray-100 transition hover:shadow-md">
-                    {/* Item Image */}
-                    <div className="w-32 shrink-0 cursor-pointer" onClick={() => navigate(`/product/${productId}`)}>
-                      <img 
-                        src={displayImg} 
-                        alt="Product" 
-                        className="w-full aspect-[4/5] object-cover rounded bg-gray-100 border border-gray-50"
-                        onError={(e) => { e.target.src = 'https://placehold.co/150x200?text=No+Image'; }}
+          {/* ── Left: Cart Items ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {items.map((item) => {
+              const isPopulated = typeof item.product === 'object' && item.product !== null;
+              const productId = isPopulated ? item.product._id : item.product;
+              const title = isPopulated ? item.product.title : `Product #${productId}`;
+              const imgUrl = getItemImage(item);
+              const attrs = item.product?.varients?.attributes || null;
+              const unitPrice = item.trustedPrice || item.price?.amount || 0;
+              const lineTotal = unitPrice * (item.quantity || 1);
+              const isRemoving = removingId === item._id;
+
+              return (
+                <div
+                  key={item._id}
+                  style={{
+                    background: '#fff', borderRadius: '1rem',
+                    border: '1px solid #f3f4f6',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    overflow: 'hidden',
+                    opacity: isRemoving ? 0.4 : 1,
+                    transition: 'opacity 0.3s'
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '1.25rem', padding: '1.25rem' }}>
+                    {/* Image */}
+                    <div
+                      onClick={() => navigate(`/product/${productId}`)}
+                      style={{ width: '110px', flexShrink: 0, cursor: 'pointer', borderRadius: '0.625rem', overflow: 'hidden', background: '#f3f4f6' }}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={title}
+                        style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block' }}
+                        onError={e => { e.target.src = 'https://placehold.co/160x200?text=No+Image'; }}
                       />
                     </div>
-                    
-                    {/* Item Details */}
-                    <div className="flex flex-col flex-grow py-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 
-                          className="text-lg font-bold text-gray-900 hover:text-gray-600 transition cursor-pointer leading-tight max-w-[80%]" 
-                          onClick={() => navigate(`/product/${productId}`)}
-                        >
-                          {title}
-                        </h3>
-                        <button className="text-gray-400 hover:text-red-500 transition px-2 py-1 text-sm font-bold">
-                           ✕
-                        </button>
-                      </div>
 
-                      {/* Attributes (e.g. Size, Color) */}
-                      {item.attributes && Object.keys(item.attributes).length > 0 && (
-                        <div className="text-sm text-gray-500 mb-4 flex gap-3 flex-wrap">
-                          {Object.entries(item.attributes).map(([k, v]) => (
-                            <span key={k} className="bg-gray-50 px-2.5 py-1 rounded border border-gray-100">
-                              {k}: <span className="font-semibold text-gray-700">{v}</span>
+                    {/* Details */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <h3
+                        onClick={() => navigate(`/product/${productId}`)}
+                        style={{ fontSize: '1rem', fontWeight: 700, cursor: 'pointer', lineHeight: 1.3, margin: 0, color: '#111827' }}
+                      >
+                        {title}
+                      </h3>
+
+                      {/* Attributes badges */}
+                      {attrs && Object.keys(attrs).length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          {Object.entries(attrs).map(([k, v]) => (
+                            <span key={k} style={{
+                              fontSize: '0.72rem', padding: '0.2rem 0.6rem',
+                              background: '#f9fafb', border: '1px solid #e5e7eb',
+                              borderRadius: '999px', color: '#374151', fontWeight: 500
+                            }}>
+                              {k}: <b>{v}</b>
                             </span>
                           ))}
                         </div>
                       )}
 
-                      <div className="mt-auto flex justify-between items-end">
-                        {/* Quantity Controls */}
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 mb-1.5 tracking-wider uppercase">Qty</p>
-                          <div className="flex items-center gap-0">
-                            <button className="w-8 h-8 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition">
-                              −
-                            </button>
-                            <span className="w-10 h-8 border-y-1.5 border-gray-200 flex items-center justify-center text-sm font-bold text-gray-900">
-                              {item.quantity}
-                            </span>
-                            <button className="w-8 h-8 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition">
-                              +
-                            </button>
-                          </div>
+                      {/* Price per unit */}
+                      <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>
+                        {fmt(unitPrice)} per item
+                      </p>
+
+                      {/* Qty + Line Total row */}
+                      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        {/* Qty controls */}
+                        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: '0.625rem', overflow: 'hidden' }}>
+                          <button
+                            onClick={() => onDecrement(item)}
+                            disabled={item.quantity <= 1}
+                            style={{
+                              width: '2.25rem', height: '2.25rem', border: 'none',
+                              background: item.quantity <= 1 ? '#f9fafb' : '#fff',
+                              color: item.quantity <= 1 ? '#d1d5db' : '#111827',
+                              fontSize: '1.1rem', fontWeight: 700, cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                              transition: 'background 0.15s'
+                            }}
+                          >−</button>
+                          <span style={{
+                            width: '2.5rem', textAlign: 'center', fontWeight: 700,
+                            fontSize: '0.9rem', borderLeft: '1.5px solid #e5e7eb', borderRight: '1.5px solid #e5e7eb',
+                            lineHeight: '2.25rem', color: '#111827'
+                          }}>
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => onIncrement(item)}
+                            style={{
+                              width: '2.25rem', height: '2.25rem', border: 'none', background: '#fff',
+                              color: '#111827', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s'
+                            }}
+                          >+</button>
                         </div>
 
-                        {/* Price */}
-                        <div className="text-right">
-                          {item.quantity > 1 && (
-                            <div className="text-xs text-gray-400 mb-1">
-                              {formatPrice((item.price?.amount || 0) / item.quantity, item.price?.currency)} each
-                            </div>
-                          )}
-                          <span className="text-xl font-bold text-gray-900 block tracking-tight">
-                            {formatPrice(item.price?.amount || 0, item.price?.currency)}
-                          </span>
-                        </div>
+                        {/* Line total */}
+                        <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827' }}>
+                          {fmt(lineTotal)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Right: Order Summary */}
-            <div className="bg-white p-7 rounded shadow-sm border border-gray-100 sticky top-6">
-              <h2 className="text-base font-bold text-gray-900 mb-6 uppercase tracking-wider">Order Summary</h2>
-              
-              <div className="flex flex-col gap-4 mb-6 border-b border-gray-100 pb-6">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Subtotal</span>
-                  <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
+                  {/* Remove button — below the card content */}
+                  <div style={{ borderTop: '1px solid #f3f4f6', padding: '0.625rem 1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => onRemove(item._id)}
+                      disabled={isRemoving}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.35rem',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#ef4444', fontSize: '0.8rem', fontWeight: 600,
+                        padding: '0.3rem 0.6rem', borderRadius: '0.4rem',
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    >
+                      🗑️ Remove item
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Estimated Shipping</span>
-                  <span className="text-green-600 font-semibold tracking-wide">FREE</span>
+              );
+            })}
+          </div>
+
+          {/* ── Right: Order Summary ── */}
+          <div style={{ position: 'sticky', top: '1.5rem' }}>
+            <div style={{
+              background: '#fff', borderRadius: '1rem',
+              border: '1px solid #f3f4f6',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              padding: '1.5rem'
+            }}>
+              <h2 style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: '1.25rem' }}>
+                Order Summary
+              </h2>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '1.25rem', borderBottom: '1px solid #f3f4f6', marginBottom: '1.25rem' }}>
+                {items.map(item => {
+                  const isPopulated = typeof item.product === 'object' && item.product !== null;
+                  const title = isPopulated ? item.product.title : 'Product';
+                  const lineTotal = (item.trustedPrice || item.price?.amount || 0) * (item.quantity || 1);
+                  return (
+                    <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#374151' }}>
+                      <span style={{ maxWidth: '65%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {title} <span style={{ color: '#9ca3af' }}>×{item.quantity}</span>
+                      </span>
+                      <span style={{ fontWeight: 600 }}>{fmt(lineTotal)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#6b7280' }}>
+                  <span>Shipping</span>
+                  <span style={{ color: '#16a34a', fontWeight: 600 }}>FREE</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#6b7280' }}>
                   <span>Tax</span>
-                  <span className="font-semibold text-gray-900">{formatPrice(0)}</span>
+                  <span style={{ fontWeight: 600 }}>₹0</span>
                 </div>
               </div>
 
-              <div className="flex justify-between items-center mb-8">
-                <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">Total</span>
-                <span className="text-3xl font-bold text-gray-900 tracking-tight">{formatPrice(subtotal)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '2px solid #111827', marginBottom: '1.5rem' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</span>
+                <span style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '-0.03em' }}>{fmt(total)}</span>
               </div>
 
-              <button className="w-full py-4 border-2 border-gray-900 bg-gray-900 text-white text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-800 shadow-sm">
-                 Checkout
-              </button>
+              {/* ── AI / CTA section ── */}
+              {isHighValue ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {/* AI Negotiate banner */}
+                  <div style={{
+                    background: 'linear-gradient(135deg,#ede9fe,#ddd6fe)',
+                    border: '1px solid #c4b5fd', borderRadius: '0.875rem',
+                    padding: '0.875rem 1rem', textAlign: 'center', marginBottom: '0.25rem'
+                  }}>
+                    <div style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>🤖✨</div>
+                    <p style={{ fontSize: '0.78rem', color: '#5b21b6', fontWeight: 600, margin: 0, lineHeight: 1.4 }}>
+                      Your cart is above ₹5,000! Let our AI negotiate a special discount for you.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowNegotiate(true)}
+                    style={{
+                      width: '100%', padding: '0.875rem',
+                      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+                      color: '#fff', border: 'none', borderRadius: '0.75rem',
+                      fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
+                      letterSpacing: '0.02em', boxShadow: '0 4px 14px rgba(109,40,217,0.35)'
+                    }}
+                  >
+                    🤖 Negotiate with Seller
+                  </button>
+                  <button
+                    style={{
+                      width: '100%', padding: '0.875rem',
+                      background: '#111827', color: '#fff',
+                      border: 'none', borderRadius: '0.75rem',
+                      fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em'
+                    }}
+                  >
+                    Buy Now
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg,#fff7ed,#ffedd5)',
+                    border: '1px solid #fed7aa', borderRadius: '0.875rem',
+                    padding: '0.875rem 1rem', textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '1.2rem', marginBottom: '0.3rem' }}>🎯</div>
+                    <p style={{ fontSize: '0.78rem', color: '#9a3412', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
+                      Add {fmt(5000 - total)} more to unlock AI price negotiation &amp; exclusive seller discounts!
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/')}
+                    style={{
+                      width: '100%', padding: '0.875rem',
+                      background: 'none', border: '1.5px solid #d1d5db', borderRadius: '0.75rem',
+                      fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', color: '#374151'
+                    }}
+                  >
+                    + Add More Items
+                  </button>
+                  <button
+                    style={{
+                      width: '100%', padding: '0.875rem',
+                      background: '#111827', color: '#fff',
+                      border: 'none', borderRadius: '0.75rem',
+                      fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em'
+                    }}
+                  >
+                    Buy Now
+                  </button>
+                </div>
+              )}
 
-              <div className="mt-6 flex flex-col gap-3 bg-gray-50 p-4 rounded border border-gray-100">
-                 <div className="flex items-center gap-3 text-xs text-gray-600 font-medium">
-                    <span className="text-base">✅</span> 100% Secure Checkout
-                 </div>
-                 <div className="flex items-center gap-3 text-xs text-gray-600 font-medium">
-                    <span className="text-base">🔄</span> 7 Days Return Policy
-                 </div>
+              {/* Trust badges */}
+              <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {['✅ 100% Secure Checkout', '🔄 7-Day Return Policy', '🚚 Free Shipping on All Orders'].map(badge => (
+                  <div key={badge} style={{ fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {badge}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        )}
+
+        </div>
       </div>
     </div>
   );
