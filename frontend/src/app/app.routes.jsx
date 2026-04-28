@@ -9,6 +9,8 @@ import Protected from "../feature/product/components/Protected";
 import ProductDetailPage from "../feature/product/components/ProductDetailPage";
 import AddToCartPage from "../feature/product/pages/AddToCartPage";
 import WishListPage from "../feature/product/pages/WishListPage";
+import ProfilePage from "../feature/shared/pages/ProfilePage";
+import OrdersPage from "../feature/shared/pages/OrdersPage";
 
 export const router = createBrowserRouter([
     {
@@ -34,6 +36,14 @@ export const router = createBrowserRouter([
     {
         path:'/wishlist',
         element:<WishListPage />
+    },
+    {
+        path:'/profile',
+        element:<ProfilePage />
+    },
+    {
+        path:'/orders',
+        element:<OrdersPage />
     },
     {
         path:'/seller',

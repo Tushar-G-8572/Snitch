@@ -4,6 +4,7 @@ import { useProducts } from '../hooks/useProducts';
 import { useParams, useNavigate } from 'react-router';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
+import Navbar from '../../shared/components/Navbar';
 
 /* ─── helpers ──────────────────────────────────────────── */
 const formatPrice = (amount, currency = 'INR') =>
@@ -216,7 +217,7 @@ const ProductDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-20 text-gray-700">
-
+      <Navbar />
       {/* Breadcrumb */}
       <nav className="w-full flex justify-between items-center ">
         <div className=' px-10 py-5 text-xs text-gray-600 flex items-center gap-1'>
@@ -225,28 +226,6 @@ const ProductDetailPage = () => {
           <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate(-1)}>Products</span>
           <span className="text-gray-400 px-1"> / </span>
           <span className="text-gray-900 font-medium">{title || 'Product'}</span>
-        </div>
-        <div className="right flex text-sm text-gray-600 justify-between items-center gap-5 mr-10">
-          <div
-            onClick={() => navigate('/cart-items')}
-            className="add-to-cart cursor-pointer hover:text-gray-900 transition relative"
-          >
-            <span className="text-xl">🛒</span>
-            {(() => {
-              const cartData = Array.isArray(cartProducts) && cartProducts.length > 0
-                ? cartProducts[0]
-                : cartProducts;
-              const itemCount = cartData?.items?.length || 0;
-              return itemCount > 0 ? (
-                <span
-                  className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"
-                />
-              ) : null;
-            })()}
-          </div>
-          <div className="profile cursor-pointer hover:text-gray-900 transition">
-            <span>profile</span>
-          </div>
         </div>
       </nav>
 

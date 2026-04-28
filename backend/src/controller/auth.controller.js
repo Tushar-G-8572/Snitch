@@ -87,6 +87,7 @@ export async function handleGooleSignupAndLogin(req,res) {
         if(user){
             const token = createToken(user._id,user.role);
             res.cookie('token', token);
+            res.redirect(config.BASE_URI);
             return res.status(200).json({success:true,message:"User logged in successfully"})
         }
         const userName = given_name.split(' ').join('').toLocaleLowerCase() + sub.split('').reverse().join('').substring(0,5);
@@ -97,7 +98,8 @@ export async function handleGooleSignupAndLogin(req,res) {
         })
         const token = createToken(newUser._id,newUser.role);
         res.cookie('token', token);
-        return res.status(201).json({success:true,message:"User registered successfully"})
+        res.redirect(config.BASE_URI);
+        return res.status(201).json({success:true,message:"User Signed Up successfully"})
 
     }catch(error){
         console.log(error);
@@ -127,4 +129,20 @@ export async function changeRoleController(req,res) {
     console.error(error);
     return res.status(500).json({success:false,message:"Error while changing role"})
 }
+}
+
+export async function handleLogoutController(req,res) {
+    try{
+
+        const userId = req.user.id;
+        if(!userId){
+            return res.status(400).json({success:false,message:"User id needed"});
+        }
+        res.clearCookie("token");
+        return res.status(200).json({success:true,message:"user logged out"}) 
+
+    }catch(error){
+        console.error(error)
+        return res.status(500).json({success:false,message:"Error while logout user"});
+    }
 }

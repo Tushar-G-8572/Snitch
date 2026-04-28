@@ -2,6 +2,7 @@ import React, { useEffect, useState, memo, useCallback } from 'react';
 import { useCart } from '../hooks/useCart';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
+import Navbar from '../../shared/components/Navbar';
 
 const fmt = (amount, currency = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
@@ -199,7 +200,7 @@ const CartItem = memo(({ item, onIncrement, onDecrement, onRemove, navigate }) =
           onClick={() => onRemove(item._id)}
           className="flex items-center gap-1.5 text-red-500 hover:text-red-600 text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
         >
-          🗑️ Remove item
+           Remove item
         </button>
       </div>
     </div>
@@ -332,6 +333,7 @@ const AddToCartPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      <Navbar />
       {showNegotiate && <NegotiateModal total={total} onClose={() => setShowNegotiate(false)} />}
 
       {/* Navbar */}
@@ -341,7 +343,6 @@ const AddToCartPage = () => {
           <span>/</span>
           <span className="text-gray-900 font-semibold">Cart</span>
         </div>
-        <span className="font-black text-lg tracking-tight text-gray-900">SNITCH</span>
       </nav>
 
       <div className="max-w-5xl mx-auto px-5 py-8">
