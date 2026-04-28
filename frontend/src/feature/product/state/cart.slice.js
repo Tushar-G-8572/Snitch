@@ -9,20 +9,23 @@ const cartSlice = createSlice({
         cartProducts: [],
     },
     reducers: {
-        setCart: (state, actions) => {
-            state.cart = actions.payload
-        },
-        setLoading: (state, actions) => {
-            state.loading = actions.payload
-        },
-        setError: (state, actions) => {
-            state.error = actions.payload
-        },
-        setCartProducts: (state, actions) => {
-            state.cartProducts = actions.payload
+        setCart: (state, action) => { state.cart = action.payload },
+        setLoading: (state, action) => { state.loading = action.payload },
+        setError: (state, action) => { state.error = action.payload },
+        setCartProducts: (state, action) => { state.cartProducts = action.payload },
+
+        // Surgically update only one item's quantity — no full re-render
+        updateItemQuantity: (state, action) => {
+            const { itemId, quantity } = action.payload;
+            const cart = Array.isArray(state.cartProducts)
+                ? state.cartProducts[0]
+                : state.cartProducts;
+            if (!cart?.items) return;
+            const item = cart.items.find(i => i._id === itemId);
+            if (item) item.quantity = quantity;
         }
     }
-})
+});
 
 export default cartSlice.reducer;
-export const { setCart, setLoading, setError, setCartProducts } = cartSlice.actions;
+export const { setCart, setLoading, setError, setCartProducts, updateItemQuantity } = cartSlice.actions;

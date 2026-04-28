@@ -143,3 +143,36 @@ export async function removeAddToCartProduct(req,res) {
 
 
 }
+
+export async function updateCartProductQuantity(req,res) {
+  try{
+
+    const {itemId} = req.params;
+    const userId = req.user.id;
+    const {quantity}  = req.body;
+
+    console.log(itemId,userId,quantity)
+    
+    const cart = await cartModel.findOne({user:userId});
+
+    if(!cart){
+    return res.status(404).json({success:false,message:"No product in Cart"})
+  }
+
+  cart.items = cart.items.map((item)=>{
+      if(item._id.toString() === itemId){
+        console.log("In If",item.quantity);
+        item.quantity = quantity
+      }
+      return item
+    })
+
+    await cart.save();
+
+    return res.status(200).json({success:true,message:"Cart updated",cartData: cart.items})
+}catch(error){
+  console.error(error);
+  return res.status(400).json({success:false,message:"Error while updating cartProducts"});
+}
+
+}

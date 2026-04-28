@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { handleCreateProduct, handleGetProducts, handleGetSellerProducts, handleGetRelatedProduct, handleEditProduct, handleEditVarient } from '../controller/product.controller.js';
+import { handleCreateProduct,handleAddNRemoveWishlist, handleGetProducts, handleGetSellerProducts, handleGetRelatedProduct, handleEditProduct, handleEditVarient, handleGetWishlistProducts } from '../controller/product.controller.js';
 import { authUserMiddleware } from '../middleware/auth.middleware.js';
 import { productValidation } from '../validators/product.validator.js';
 import multer from 'multer'
@@ -22,5 +22,9 @@ productRouter.post('/seller/product/:productId', authUserMiddleware, upload.arra
 productRouter.put('/seller/product/:productId/variants',authUserMiddleware,upload.any(),handleEditVarient);
 
 productRouter.get(`/product/:productId`, handleGetRelatedProduct);
+
+productRouter.patch('/product/add-wishlist/:productId',authUserMiddleware,handleAddNRemoveWishlist);
+
+productRouter.get('/wishlist',authUserMiddleware,handleGetWishlistProducts);
 
 export default productRouter;

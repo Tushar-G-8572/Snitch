@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo, useCallback } from 'react';
 import { useCart } from '../hooks/useCart';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
@@ -6,20 +6,13 @@ import { useNavigate } from 'react-router';
 const fmt = (amount, currency = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 
-/* ── helper: pick the best image for a cart item ── */
 function getItemImage(item) {
-  // Case 1: variant item — use varients.images[]
-  if (item.varient && item.product?.varients?.images?.length > 0) {
+  if (item.varient && item.product?.varients?.images?.length > 0)
     return item.product.varients.images[0].url;
-  }
-  // Case 2: non-variant item — product.images is a single object
-  if (item.product?.images?.url) {
+  if (item.product?.images?.url)
     return item.product.images.url;
-  }
-  // Case 3: images array fallback
-  if (Array.isArray(item.product?.images) && item.product.images[0]?.url) {
+  if (Array.isArray(item.product?.images) && item.product.images[0]?.url)
     return item.product.images[0].url;
-  }
   return 'https://placehold.co/160x200?text=No+Image';
 }
 
@@ -40,70 +33,266 @@ function NegotiateModal({ total, onClose }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
-    }}>
-      <div style={{
-        background: '#fff', borderRadius: '1.25rem', maxWidth: '440px', width: '100%',
-        padding: '2rem', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative'
-      }}>
-        <button onClick={onClose} style={{
-          position: 'absolute', top: '1rem', right: '1rem',
-          background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#9ca3af'
-        }}>✕</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl bg-none border-none cursor-pointer transition-colors"
+        >✕</button>
 
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🤖</div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>
-            AI Price Negotiator
-          </h2>
-          <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-2">🤖</div>
+          <h2 className="text-lg font-bold text-gray-900 mb-1">AI Price Negotiator</h2>
+          <p className="text-sm text-gray-500">
             Our AI will analyze your cart and negotiate the best discount with the seller.
           </p>
         </div>
 
-        <div style={{
-          background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
-          border: '1px solid #bbf7d0', borderRadius: '0.75rem',
-          padding: '0.75rem 1rem', marginBottom: '1.25rem', textAlign: 'center'
-        }}>
-          <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 600 }}>Cart Value</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#166534' }}>{fmt(total)}</div>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl px-4 py-3 mb-5 text-center">
+          <span className="text-xs text-green-700 font-semibold block">Cart Value</span>
+          <div className="text-2xl font-black text-green-800">{fmt(total)}</div>
         </div>
 
         {result ? (
-          <div style={{
-            background: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
-            border: '1px solid #fde68a', borderRadius: '0.75rem',
-            padding: '1rem', fontSize: '0.875rem', color: '#92400e', lineHeight: 1.6, marginBottom: '1rem'
-          }}>
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 border border-yellow-200 rounded-xl p-4 text-sm text-amber-800 leading-relaxed mb-4">
             {result}
           </div>
         ) : (
           <button
             onClick={negotiate}
             disabled={loading}
-            style={{
-              width: '100%', padding: '0.875rem',
-              background: loading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-              color: '#fff', border: 'none', borderRadius: '0.75rem',
-              fontSize: '0.9rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-              letterSpacing: '0.03em', transition: 'opacity 0.2s', marginBottom: '0.75rem'
-            }}
+            className={`w-full py-3.5 rounded-xl text-white font-bold text-sm tracking-wide mb-3 transition-opacity
+              ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-br from-violet-600 to-indigo-600 hover:opacity-90 cursor-pointer'}`}
           >
             {loading ? '🔄 Negotiating...' : '✨ Negotiate Now'}
           </button>
         )}
 
-        <button onClick={onClose} style={{
-          width: '100%', padding: '0.75rem',
-          background: 'none', border: '1.5px solid #e5e7eb', borderRadius: '0.75rem',
-          fontSize: '0.85rem', fontWeight: 600, color: '#374151', cursor: 'pointer'
-        }}>
+        <button
+          onClick={onClose}
+          className="w-full py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+        >
           Close
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Skeleton ── */
+function CartSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans p-10">
+      <div className="max-w-5xl mx-auto">
+        <div className="h-9 w-48 bg-gray-200 rounded-lg mb-8 animate-pulse" />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-36 bg-gray-200 rounded-2xl mb-4 animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Empty Cart ── */
+function EmptyCart({ onNavigate }) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-8xl mb-4">🛒</div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">Your cart is empty</h2>
+        <p className="text-gray-500 mb-8 text-sm">Looks like you haven't added anything yet.</p>
+        <button
+          onClick={onNavigate}
+          className="px-10 py-3.5 bg-gray-900 text-white rounded-xl font-bold text-sm tracking-widest hover:bg-gray-700 transition-colors cursor-pointer"
+        >
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Cart Item — memoized so only THIS item re-renders on quantity change ── */
+const CartItem = memo(({ item, onIncrement, onDecrement, onRemove, navigate }) => {
+  const isPopulated = typeof item.product === 'object' && item.product !== null;
+  const productId = isPopulated ? item.product._id : item.product;
+  const title = isPopulated ? item.product.title : `Product #${productId}`;
+  const imgUrl = getItemImage(item);
+  const attrs = item.product?.varients?.attributes || null;
+  const unitPrice = item.trustedPrice || item.price?.amount || 0;
+  const lineTotal = unitPrice * (item.quantity || 1);
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-opacity duration-300">
+      <div className="flex gap-5 p-5">
+
+        {/* Image */}
+        <div
+          onClick={() => navigate(`/product/${productId}`)}
+          className="w-28 shrink-0 rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+        >
+          <img
+            src={imgUrl}
+            alt={title}
+            className="w-full object-cover"
+            style={{ aspectRatio: '4/5' }}
+            onError={e => { e.target.src = 'https://placehold.co/160x200?text=No+Image'; }}
+          />
+        </div>
+
+        {/* Details */}
+        <div className="flex-1 flex flex-col gap-2 min-w-0">
+          <h3
+            onClick={() => navigate(`/product/${productId}`)}
+            className="text-base font-bold text-gray-900 cursor-pointer leading-snug hover:text-indigo-600 transition-colors line-clamp-2"
+          >
+            {title}
+          </h3>
+
+          {/* Attribute badges */}
+          {attrs && Object.keys(attrs).length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {Object.entries(attrs).map(([k, v]) => (
+                <span
+                  key={k}
+                  className="text-xs px-2.5 py-0.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 font-medium"
+                >
+                  {k}: <b className="text-gray-800">{v}</b>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400">{fmt(unitPrice)} per item</p>
+
+          {/* Qty + Line total */}
+          <div className="mt-auto flex items-center justify-between flex-wrap gap-3">
+            {/* Qty stepper */}
+            <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+              <button
+                onClick={() => onDecrement(item)}
+                disabled={item.quantity <= 1}
+                className={`w-9 h-9 flex items-center justify-center text-lg font-bold border-none transition-colors
+                  ${item.quantity <= 1
+                    ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                    : 'bg-white text-gray-900 hover:bg-gray-100 cursor-pointer'
+                  }`}
+              >−</button>
+              <span className="w-10 text-center font-bold text-sm text-gray-900 border-x-2 border-gray-200 h-9 flex items-center justify-center">
+                {item.quantity}
+              </span>
+              <button
+                onClick={() => onIncrement(item)}
+                className="w-9 h-9 flex items-center justify-center text-lg font-bold bg-white text-gray-900 hover:bg-gray-100 border-none cursor-pointer transition-colors"
+              >+</button>
+            </div>
+
+            {/* Line total */}
+            <span className="text-lg font-black text-gray-900">{fmt(lineTotal)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Remove */}
+      <div className="border-t border-gray-100 px-5 py-2.5 flex justify-end">
+        <button
+          onClick={() => onRemove(item._id)}
+          className="flex items-center gap-1.5 text-red-500 hover:text-red-600 text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
+        >
+          🗑️ Remove item
+        </button>
+      </div>
+    </div>
+  );
+});
+
+/* ── Order Summary ── */
+function OrderSummary({ items, total, onNegotiate, onNavigate }) {
+  const isHighValue = total >= 5000;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <h2 className="text-xs font-black tracking-widest uppercase text-gray-400 mb-5">Order Summary</h2>
+
+      {/* Per-item breakdown */}
+      <div className="flex flex-col gap-3 pb-5 border-b border-gray-100 mb-5">
+        {items.map(item => {
+          const isPopulated = typeof item.product === 'object' && item.product !== null;
+          const title = isPopulated ? item.product.title : 'Product';
+          const lineTotal = (item.trustedPrice || item.price?.amount || 0) * (item.quantity || 1);
+          return (
+            <div key={item._id} className="flex justify-between text-sm text-gray-600">
+              <span className="max-w-[65%] truncate">
+                {title} <span className="text-gray-400">×{item.quantity}</span>
+              </span>
+              <span className="font-semibold">{fmt(lineTotal)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Shipping / Tax */}
+      <div className="flex flex-col gap-2 mb-5">
+        <div className="flex justify-between text-sm text-gray-500">
+          <span>Shipping</span>
+          <span className="text-green-600 font-semibold">FREE</span>
+        </div>
+        <div className="flex justify-between text-sm text-gray-500">
+          <span>Tax</span>
+          <span className="font-semibold">₹0</span>
+        </div>
+      </div>
+
+      {/* Grand total */}
+      <div className="flex justify-between items-center pt-4 border-t-2 border-gray-900 mb-6">
+        <span className="text-xs font-black uppercase tracking-widest">Total</span>
+        <span className="text-3xl font-black tracking-tight">{fmt(total)}</span>
+      </div>
+
+      {/* CTA section */}
+      {isHighValue ? (
+        <div className="flex flex-col gap-3">
+          <div className="bg-gradient-to-br from-violet-100 to-purple-100 border border-purple-200 rounded-2xl px-4 py-3 text-center">
+            <div className="text-2xl mb-1">🤖✨</div>
+            <p className="text-xs text-purple-800 font-semibold leading-snug">
+              Your cart is above ₹5,000! Let our AI negotiate a special discount for you.
+            </p>
+          </div>
+          <button
+            onClick={onNegotiate}
+            className="w-full py-3.5 bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-xl text-sm font-bold tracking-wide shadow-lg shadow-violet-200 hover:opacity-90 transition-opacity cursor-pointer border-none"
+          >
+            🤖 Negotiate with Seller
+          </button>
+          <button className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
+            Buy Now
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-2xl px-4 py-3 text-center">
+            <div className="text-xl mb-1">🎯</div>
+            <p className="text-xs text-orange-800 font-semibold leading-snug">
+              Add {fmt(5000 - total)} more to unlock AI price negotiation &amp; exclusive seller discounts!
+            </p>
+          </div>
+          <button
+            onClick={onNavigate}
+            className="w-full py-3.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer bg-white"
+          >
+            + Add More Items
+          </button>
+          <button className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
+            Buy Now
+          </button>
+        </div>
+      )}
+
+      {/* Trust badges */}
+      <div className="mt-5 flex flex-col gap-2">
+        {['✅ 100% Secure Checkout', '🔄 7-Day Return Policy', '🚚 Free Shipping on All Orders'].map(badge => (
+          <div key={badge} className="text-xs text-gray-400 flex items-center gap-1.5">{badge}</div>
+        ))}
       </div>
     </div>
   );
@@ -116,349 +305,75 @@ const AddToCartPage = () => {
   const cartProducts = useSelector(state => state.cart.cartProducts);
   const loading = useSelector(state => state.cart.loading);
   const [showNegotiate, setShowNegotiate] = useState(false);
-  const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => { handleGetAddToCartProduct(); }, []);
-  console.log(cartProducts)
 
   const cart = Array.isArray(cartProducts) && cartProducts.length > 0 ? cartProducts[0] : cartProducts;
   const items = cart?.items || [];
-
-  // Use trustedPrice * quantity for correct totals
   const total = items.reduce((acc, item) => acc + (item.trustedPrice || item.price?.amount || 0) * (item.quantity || 1), 0);
 
-  const onDecrement = (item) => {
+  // useCallback prevents CartItem memo from being bypassed on every parent render
+  const onDecrement = useCallback((item) => {
     if (item.quantity <= 1) return;
-    console.log(item._id, item.quantity - 1)
-    // handleUpdateQuantity(item._id, item.quantity - 1);
-  };
+    handleUpdateQuantity(item._id, item.quantity - 1);
+  }, [handleUpdateQuantity]);
 
-  const onIncrement = (item) => {
-    console.log(item._id, item.quantity + 1)
-    // handleUpdateQuantity(item._id, item.quantity + 1);
-  };
+  const onIncrement = useCallback((item) => {
+    handleUpdateQuantity(item._id, item.quantity + 1);
+  }, [handleUpdateQuantity]);
 
-  const onRemove = async (itemId) => {
-    // setRemovingId(itemId);
-    console.log(itemId);
+  const onRemove = useCallback(async (itemId) => {
     await handleRemoveAddToCart(itemId);
-    await handleGetAddToCartProduct()
-    // setRemovingId(null);
-  };
+    await handleGetAddToCartProduct();
+  }, [handleRemoveAddToCart, handleGetAddToCartProduct]);
 
-  /* ── Skeleton loader ── */
-  if (loading && items.length === 0) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter','Segoe UI',sans-serif", padding: '2.5rem 1.25rem' }}>
-        <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-          <div style={{ height: '2.5rem', width: '12rem', background: '#e5e7eb', borderRadius: '0.5rem', marginBottom: '2rem', animation: 'pulse 1.5s infinite' }} />
-          {[1, 2, 3].map(i => (
-            <div key={i} style={{ height: '9rem', background: '#e5e7eb', borderRadius: '1rem', marginBottom: '1rem', animation: 'pulse 1.5s infinite' }} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  /* ── Empty cart ── */
-  if (!loading && items.length === 0) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter','Segoe UI',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🛒</div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', marginBottom: '0.5rem' }}>Your cart is empty</h2>
-          <p style={{ color: '#6b7280', marginBottom: '2rem', fontSize: '0.9rem' }}>Looks like you haven't added anything yet.</p>
-          <button
-            onClick={() => navigate('/')}
-            style={{ padding: '0.875rem 2.5rem', background: '#111827', color: '#fff', border: 'none', borderRadius: '0.75rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', letterSpacing: '0.05em' }}
-          >
-            Continue Shopping
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const isHighValue = total >= 5000;
+  if (loading && items.length === 0) return <CartSkeleton />;
+  if (!loading && items.length === 0) return <EmptyCart onNavigate={() => navigate('/')} />;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter','Segoe UI',sans-serif", color: '#111827' }}>
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       {showNegotiate && <NegotiateModal total={total} onClose={() => setShowNegotiate(false)} />}
 
-      {/* ── Header ── */}
-      <nav style={{ background: '#fff', borderBottom: '1px solid #f3f4f6', padding: '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#6b7280' }}>
-          <span style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>Home</span>
+      {/* Navbar */}
+      <nav className="bg-white border-b border-gray-100 px-10 py-4 flex justify-between items-center">
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span className="cursor-pointer hover:text-gray-700 transition-colors" onClick={() => navigate('/')}>Home</span>
           <span>/</span>
-          <span style={{ color: '#111827', fontWeight: 600 }}>Cart</span>
+          <span className="text-gray-900 font-semibold">Cart</span>
         </div>
-        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em', color: '#111827' }}>SNITCH</span>
+        <span className="font-black text-lg tracking-tight text-gray-900">SNITCH</span>
       </nav>
 
-      <div style={{ maxWidth: '1080px', margin: '0 auto', padding: '2rem 1.25rem' }}>
-        <h1 style={{ fontSize: '1.9rem', fontWeight: 800, marginBottom: '0.25rem', letterSpacing: '-0.03em' }}>
-          Your Cart
-        </h1>
-        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '2rem' }}>
+      <div className="max-w-5xl mx-auto px-5 py-8">
+        <h1 className="text-3xl font-black tracking-tight mb-1">Your Cart</h1>
+        <p className="text-gray-400 text-sm mb-8">
           {items.length} item{items.length !== 1 ? 's' : ''} in your bag
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) 340px', gap: '2rem', alignItems: 'start' }}>
+        <div className="grid gap-8" style={{ gridTemplateColumns: 'minmax(0,2fr) 340px' }}>
 
-          {/* ── Left: Cart Items ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {items.map((item) => {
-              const isPopulated = typeof item.product === 'object' && item.product !== null;
-              const productId = isPopulated ? item.product._id : item.product;
-              const title = isPopulated ? item.product.title : `Product #${productId}`;
-              const imgUrl = getItemImage(item);
-              const attrs = item.product?.varients?.attributes || null;
-              const unitPrice = item.trustedPrice || item.price?.amount || 0;
-              const lineTotal = unitPrice * (item.quantity || 1);
-              const isRemoving = removingId === item._id;
-
-              return (
-                <div
-                  key={item._id}
-                  style={{
-                    background: '#fff', borderRadius: '1rem',
-                    border: '1px solid #f3f4f6',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                    overflow: 'hidden',
-                    opacity: isRemoving ? 0.4 : 1,
-                    transition: 'opacity 0.3s'
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: '1.25rem', padding: '1.25rem' }}>
-                    {/* Image */}
-                    <div
-                      onClick={() => navigate(`/product/${productId}`)}
-                      style={{ width: '110px', flexShrink: 0, cursor: 'pointer', borderRadius: '0.625rem', overflow: 'hidden', background: '#f3f4f6' }}
-                    >
-                      <img
-                        src={imgUrl}
-                        alt={title}
-                        style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block' }}
-                        onError={e => { e.target.src = 'https://placehold.co/160x200?text=No+Image'; }}
-                      />
-                    </div>
-
-                    {/* Details */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <h3
-                        onClick={() => navigate(`/product/${productId}`)}
-                        style={{ fontSize: '1rem', fontWeight: 700, cursor: 'pointer', lineHeight: 1.3, margin: 0, color: '#111827' }}
-                      >
-                        {title}
-                      </h3>
-
-                      {/* Attributes badges */}
-                      {attrs && Object.keys(attrs).length > 0 && (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          {Object.entries(attrs).map(([k, v]) => (
-                            <span key={k} style={{
-                              fontSize: '0.72rem', padding: '0.2rem 0.6rem',
-                              background: '#f9fafb', border: '1px solid #e5e7eb',
-                              borderRadius: '999px', color: '#374151', fontWeight: 500
-                            }}>
-                              {k}: <b>{v}</b>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Price per unit */}
-                      <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>
-                        {fmt(unitPrice)} per item
-                      </p>
-
-                      {/* Qty + Line Total row */}
-                      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-                        {/* Qty controls */}
-                        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: '0.625rem', overflow: 'hidden' }}>
-                          <button
-                            onClick={() => onDecrement(item)}
-                            disabled={item.quantity <= 1}
-                            style={{
-                              width: '2.25rem', height: '2.25rem', border: 'none',
-                              background: item.quantity <= 1 ? '#f9fafb' : '#fff',
-                              color: item.quantity <= 1 ? '#d1d5db' : '#111827',
-                              fontSize: '1.1rem', fontWeight: 700, cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
-                              transition: 'background 0.15s'
-                            }}
-                          >−</button>
-                          <span style={{
-                            width: '2.5rem', textAlign: 'center', fontWeight: 700,
-                            fontSize: '0.9rem', borderLeft: '1.5px solid #e5e7eb', borderRight: '1.5px solid #e5e7eb',
-                            lineHeight: '2.25rem', color: '#111827'
-                          }}>
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => onIncrement(item)}
-                            style={{
-                              width: '2.25rem', height: '2.25rem', border: 'none', background: '#fff',
-                              color: '#111827', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s'
-                            }}
-                          >+</button>
-                        </div>
-
-                        {/* Line total */}
-                        <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827' }}>
-                          {fmt(lineTotal)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Remove button — below the card content */}
-                  <div style={{ borderTop: '1px solid #f3f4f6', padding: '0.625rem 1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={() => onRemove(item._id)}
-                      disabled={isRemoving}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '0.35rem',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: '#ef4444', fontSize: '0.8rem', fontWeight: 600,
-                        padding: '0.3rem 0.6rem', borderRadius: '0.4rem',
-                        transition: 'background 0.15s'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                    >
-                      🗑️ Remove item
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Left: Items */}
+          <div className="flex flex-col gap-4">
+            {items.map(item => (
+              <CartItem
+                key={item._id}
+                item={item}
+                onIncrement={onIncrement}
+                onDecrement={onDecrement}
+                onRemove={onRemove}
+                navigate={navigate}
+              />
+            ))}
           </div>
 
-          {/* ── Right: Order Summary ── */}
-          <div style={{ position: 'sticky', top: '1.5rem' }}>
-            <div style={{
-              background: '#fff', borderRadius: '1rem',
-              border: '1px solid #f3f4f6',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-              padding: '1.5rem'
-            }}>
-              <h2 style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: '1.25rem' }}>
-                Order Summary
-              </h2>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '1.25rem', borderBottom: '1px solid #f3f4f6', marginBottom: '1.25rem' }}>
-                {items.map(item => {
-                  const isPopulated = typeof item.product === 'object' && item.product !== null;
-                  const title = isPopulated ? item.product.title : 'Product';
-                  const lineTotal = (item.trustedPrice || item.price?.amount || 0) * (item.quantity || 1);
-                  return (
-                    <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#374151' }}>
-                      <span style={{ maxWidth: '65%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {title} <span style={{ color: '#9ca3af' }}>×{item.quantity}</span>
-                      </span>
-                      <span style={{ fontWeight: 600 }}>{fmt(lineTotal)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#6b7280' }}>
-                  <span>Shipping</span>
-                  <span style={{ color: '#16a34a', fontWeight: 600 }}>FREE</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#6b7280' }}>
-                  <span>Tax</span>
-                  <span style={{ fontWeight: 600 }}>₹0</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '2px solid #111827', marginBottom: '1.5rem' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</span>
-                <span style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '-0.03em' }}>{fmt(total)}</span>
-              </div>
-
-              {/* ── AI / CTA section ── */}
-              {isHighValue ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {/* AI Negotiate banner */}
-                  <div style={{
-                    background: 'linear-gradient(135deg,#ede9fe,#ddd6fe)',
-                    border: '1px solid #c4b5fd', borderRadius: '0.875rem',
-                    padding: '0.875rem 1rem', textAlign: 'center', marginBottom: '0.25rem'
-                  }}>
-                    <div style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>🤖✨</div>
-                    <p style={{ fontSize: '0.78rem', color: '#5b21b6', fontWeight: 600, margin: 0, lineHeight: 1.4 }}>
-                      Your cart is above ₹5,000! Let our AI negotiate a special discount for you.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowNegotiate(true)}
-                    style={{
-                      width: '100%', padding: '0.875rem',
-                      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-                      color: '#fff', border: 'none', borderRadius: '0.75rem',
-                      fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
-                      letterSpacing: '0.02em', boxShadow: '0 4px 14px rgba(109,40,217,0.35)'
-                    }}
-                  >
-                    🤖 Negotiate with Seller
-                  </button>
-                  <button
-                    style={{
-                      width: '100%', padding: '0.875rem',
-                      background: '#111827', color: '#fff',
-                      border: 'none', borderRadius: '0.75rem',
-                      fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em'
-                    }}
-                  >
-                    Buy Now
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{
-                    background: 'linear-gradient(135deg,#fff7ed,#ffedd5)',
-                    border: '1px solid #fed7aa', borderRadius: '0.875rem',
-                    padding: '0.875rem 1rem', textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '1.2rem', marginBottom: '0.3rem' }}>🎯</div>
-                    <p style={{ fontSize: '0.78rem', color: '#9a3412', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
-                      Add {fmt(5000 - total)} more to unlock AI price negotiation &amp; exclusive seller discounts!
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => navigate('/')}
-                    style={{
-                      width: '100%', padding: '0.875rem',
-                      background: 'none', border: '1.5px solid #d1d5db', borderRadius: '0.75rem',
-                      fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', color: '#374151'
-                    }}
-                  >
-                    + Add More Items
-                  </button>
-                  <button
-                    style={{
-                      width: '100%', padding: '0.875rem',
-                      background: '#111827', color: '#fff',
-                      border: 'none', borderRadius: '0.75rem',
-                      fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em'
-                    }}
-                  >
-                    Buy Now
-                  </button>
-                </div>
-              )}
-
-              {/* Trust badges */}
-              <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {['✅ 100% Secure Checkout', '🔄 7-Day Return Policy', '🚚 Free Shipping on All Orders'].map(badge => (
-                  <div key={badge} style={{ fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    {badge}
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Right: Summary — sticky */}
+          <div className="sticky top-6 self-start">
+            <OrderSummary
+              items={items}
+              total={total}
+              onNegotiate={() => setShowNegotiate(true)}
+              onNavigate={() => navigate('/')}
+            />
           </div>
 
         </div>

@@ -44,3 +44,13 @@ export async function editProductVariants(productId, variantData) {
     });
     return response.data;
 }
+
+export async function addToWishlist(productId) {
+    const response = await api.patch(`/product/add-wishlist/${productId}`);
+    return response.data;
+}
+
+export async function getWishListProduct() {
+    const response = await api.get('/wishlist');
+    return response.data;
+}

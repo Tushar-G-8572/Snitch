@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useProducts } from '../hooks/useProducts';
 import { useParams, useNavigate } from 'react-router';
-import AddToCartPage from '../pages/AddToCartPage';
 import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 
 /* ─── helpers ──────────────────────────────────────────── */
 const formatPrice = (amount, currency = 'INR') =>
@@ -48,15 +48,19 @@ const ProductDetailPage = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { handleGetProductFromProductId } = useProducts();
-  const {handleAddToCart}  = useCart();
+  const { handleAddToCart } = useCart();
+  const cartProducts = useSelector(state => state.cart.cartProducts)
 
+  const {handleToggleWishlist,isWishlisted} = useWishlist()
+  const wishlisted = isWishlisted(productId);
   /* gallery state */
   const [activeImgUrl, setActiveImgUrl] = useState('');
   const [imgLoaded, setImgLoaded] = useState(false);
 
   /* quantity */
   const [quantity, setQuantity] = useState(1);
-  const [imageId,setImageId] = useState(null);
+  const [imageId, setImageId] = useState(null);
+
   /**
    * selectedAttrs — tracks one chosen value per attribute key.
    * e.g. { Size: 'XL', Color: 'Black' }
@@ -169,14 +173,14 @@ const ProductDetailPage = () => {
     );
   }
 
-  
+
   const handleAddToCartFn = async (product, selectedVariant, activeImgUrl) => {
     if (!product) return;
-    if(!user) navigate('/login');
+    if (!user) navigate('/login');
     console.log(imageId)
     // Construct the payload required for the cart
     const cartItem = {
-      productId:product._id,
+      productId: product._id,
       variantId: selectedVariant ? selectedVariant._id : null,
       imageUrl: activeImgUrl, // Tracking the specific image selected
       quantity: quantity,    // Quantity selected by the user
@@ -185,10 +189,11 @@ const ProductDetailPage = () => {
     };
 
     console.log("Add to Cart Payload:", cartItem);
-    await handleAddToCart(cartItem);
+    const flag = await handleAddToCart(cartItem);
+    if (flag) {
+      navigate(`/cart-items`);
+    }
 
-    // navigate(`/cart-items`);
-    
   };
   /* ── no product guard ── */
   if (!p) {
@@ -216,17 +221,30 @@ const ProductDetailPage = () => {
       <nav className="w-full flex justify-between items-center ">
         <div className=' px-10 py-5 text-xs text-gray-600 flex items-center gap-1'>
           <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate('/')}>Home</span>
-        <span className="text-gray-400 px-1"> / </span>
-        <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate(-1)}>Products</span>
-        <span className="text-gray-400 px-1"> / </span>
-        <span className="text-gray-900 font-medium">{title || 'Product'}</span>
+          <span className="text-gray-400 px-1"> / </span>
+          <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate(-1)}>Products</span>
+          <span className="text-gray-400 px-1"> / </span>
+          <span className="text-gray-900 font-medium">{title || 'Product'}</span>
         </div>
-        <div className="right flex text-sm text-gray-600 jusity-between items-center gap-5 mr-10 ">
-          <div onClick={()=>{navigate('/cart-items')}}
-           className="add-to-cart cursor-pointer hover:text-gray-900 transition ">
+        <div className="right flex text-sm text-gray-600 justify-between items-center gap-5 mr-10">
+          <div
+            onClick={() => navigate('/cart-items')}
+            className="add-to-cart cursor-pointer hover:text-gray-900 transition relative"
+          >
             <span className="text-xl">🛒</span>
+            {(() => {
+              const cartData = Array.isArray(cartProducts) && cartProducts.length > 0
+                ? cartProducts[0]
+                : cartProducts;
+              const itemCount = cartData?.items?.length || 0;
+              return itemCount > 0 ? (
+                <span
+                  className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"
+                />
+              ) : null;
+            })()}
           </div>
-          <div className="profile cursor-pointer hover:text-gray-900 transition ">
+          <div className="profile cursor-pointer hover:text-gray-900 transition">
             <span>profile</span>
           </div>
         </div>
@@ -274,10 +292,9 @@ const ProductDetailPage = () => {
               {baseImgs.map((url, i) => (
                 <button
                   key={i}
-                  onClick={() => { setImgLoaded(false);setActiveImgUrl(url); setSelectedAttrs(product);  }}
-                  className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${
-                    url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
-                  }`}
+                  onClick={() => { setImgLoaded(false); setActiveImgUrl(url); setSelectedAttrs(product); }}
+                  className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
+                    }`}
                 >
                   <img
                     src={url}
@@ -336,49 +353,83 @@ const ProductDetailPage = () => {
           {/* Description */}
           <p className="text-sm text-gray-600 leading-relaxed mb-7">{description}</p>
 
-          {/* Quantity */}
+          {/* Quantity + Wishlist */}
           <div className="mb-7">
             <p className="text-xs font-bold text-gray-400 mb-3 tracking-wider uppercase">Quantity</p>
-            <div className="flex items-center gap-0">
+            <div className="flex items-center gap-4">
+
+              {/* Stepper */}
+              <div className="flex items-center gap-0">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="w-11 h-11 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition"
+                  disabled={outOfStock}
+                >
+                  −
+                </button>
+                <span className="w-14 h-11 border-y-1.5 border-gray-200 flex items-center justify-center text-base font-bold text-gray-900">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity((q) => stock !== null ? Math.min(stock, q + 1) : q + 1)}
+                  className="w-11 h-11 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition"
+                  disabled={outOfStock}
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Wishlist button */}
               <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-11 h-11 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition"
-                disabled={outOfStock}
+                onClick={() => handleToggleWishlist(productId)}
+                title={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                className="w-11 h-11 flex items-center justify-center border border-gray-200 bg-white rounded transition hover:border-red-400 hover:bg-red-50"
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.88)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
               >
-                −
-              </button>
-              <span className="w-14 h-11 border-y-1.5 border-gray-200 flex items-center justify-center text-base font-bold text-gray-900">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity((q) => stock !== null ? Math.min(stock, q + 1) : q + 1)}
-                className="w-11 h-11 border-1.5 border-gray-200 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition"
-                disabled={outOfStock}
-              >
-                +
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill={wishlisted ? '#ef4444' : 'none'}
+                  stroke={wishlisted ? '#ef4444' : '#9ca3af'}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-5 h-5 transition-all duration-200"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </button>
             </div>
+
+            {/* Wishlist feedback text */}
+            {wishlisted && (
+              <p className="text-xs text-red-500 font-medium mt-2 flex items-center gap-1">
+                ❤️ Added to your wishlist
+              </p>
+            )}
           </div>
 
           {/* CTA Buttons */}
-                <div className="flex flex-col gap-3 mb-7">
-                <button onClick={() => handleAddToCartFn(p, selectedVariant, activeImgUrl)}
-                  className="w-full py-4 border-2 border-gray-900 bg-transparent text-gray-900 text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-900 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled={outOfStock}
-                >
-                  <span className="mr-2">🛒</span>
-                  ADD TO CART
-                </button>
-                <button
-                  onClick={handleBuyNow}
-                  disabled={outOfStock}
-                  className="w-full py-4 border-2 border-gray-900 bg-gray-900 text-white text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  BUY NOW
-                </button>
-                </div>
+          <div className="flex flex-col gap-3 mb-7">
+            <button onClick={() => handleAddToCartFn(p, selectedVariant, activeImgUrl)}
+              className="w-full py-4 border-2 border-gray-900 bg-transparent text-gray-900 text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-900 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={outOfStock}
+            >
+              <span className="mr-2">🛒</span>
+              ADD TO CART
+            </button>
+            <button
+              onClick={handleBuyNow}
+              disabled={outOfStock}
+              className="w-full py-4 border-2 border-gray-900 bg-gray-900 text-white text-sm font-bold tracking-widest uppercase rounded transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              BUY NOW
+            </button>
+          </div>
 
-                {/* ── Variants summary strip (shown when variants exist) ── */}
+          {/* ── Variants summary strip (shown when variants exist) ── */}
           {variants.length > 0 && (
             <div className="mb-7">
               <p className="text-xs font-bold text-gray-400 mb-3 tracking-wider uppercase">
@@ -392,7 +443,7 @@ const ProductDetailPage = () => {
                   const isActive = selectedVariant?._id === v._id;
 
                   return (
-                    <div 
+                    <div
                       key={v._id || i}
                       onClick={() => {
                         setSelectedAttrs(v.attrs);
@@ -426,22 +477,21 @@ const ProductDetailPage = () => {
                           </span>
                         </div>
                       </div>
-                      
+
                       {/* Variant Images */}
                       {v.imgs?.length > 0 && (
                         <div className="flex gap-2 flex-wrap">
                           {v.imgs.map((img, imgIdx) => (
                             <button
                               key={imgIdx}
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                setImgLoaded(false); 
-                                setActiveImgUrl(img); 
-                                setSelectedAttrs(v.attrs); 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setImgLoaded(false);
+                                setActiveImgUrl(img);
+                                setSelectedAttrs(v.attrs);
                               }}
-                              className={`w-14 h-16 rounded overflow-hidden border-2 transition ${
-                                activeImgUrl === img ? 'border-gray-900' : 'border-transparent hover:border-gray-300'
-                              }`}
+                              className={`w-14 h-16 rounded overflow-hidden border-2 transition ${activeImgUrl === img ? 'border-gray-900' : 'border-transparent hover:border-gray-300'
+                                }`}
                             >
                               <img src={img} alt={`variant-${imgIdx}`} className="w-full h-full object-cover" />
                             </button>

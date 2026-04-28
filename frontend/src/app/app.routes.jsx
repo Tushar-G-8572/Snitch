@@ -8,6 +8,7 @@ import Home from "../feature/product/pages/HomePage";
 import Protected from "../feature/product/components/Protected";
 import ProductDetailPage from "../feature/product/components/ProductDetailPage";
 import AddToCartPage from "../feature/product/pages/AddToCartPage";
+import WishListPage from "../feature/product/pages/WishListPage";
 
 export const router = createBrowserRouter([
     {
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
     {
         path:`/cart-items`,
         element: <AddToCartPage />
+    },
+    {
+        path:'/wishlist',
+        element:<WishListPage />
     },
     {
         path:'/seller',

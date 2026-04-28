@@ -1,5 +1,7 @@
 import productModel from "../models/product.model.js";
+import wishListModel from "../models/wishlist.model.js";
 import { storeImage } from "../services/ImagekitService/storage.service.js";
+import mongoose from "mongoose";
 
 export async function handleCreateProduct(req, res) {
   try {
@@ -203,3 +205,47 @@ export async function handleEditVarient(req, res) {
   }
 }
 
+export async function handleAddNRemoveWishlist(req, res) {
+    try {
+        const { productId } = req.params;
+        const userId = req.user.id;
+
+        // Validate productId
+        if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ success: false, message: "Invalid product ID" });
+        }
+
+        // One DB call — if it existed, it's now deleted
+        const deleted = await wishListModel.findOneAndDelete({ product: productId, user: userId });
+
+        if (deleted) {
+            return res.status(200).json({ success: true, message: "Item removed from wishlist" });
+        }
+
+        // Didn't exist — add it
+        await wishListModel.create({ product: productId, user: userId, });
+        return res.status(201).json({ success: true, message: "Item added in wishlist" });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Error while updating wishlist" });
+    }
+}
+
+export async function handleGetWishlistProducts(req,res) {
+  try{
+
+    const userId = req.user.id;
+    
+    const wishlistItems = await wishListModel.find({user:userId}).populate("product")
+    // console.log("wishlistItems",wishlistItems);
+    
+
+    return res.status(200).json({success:true,message:"Wishlist fetched",wishList:wishlistItems})
+    
+  }catch(error){
+    console.error(error);
+    return res.status(500).json({success:false,message:"Error while getting wishlist product"});
+  }
+
+}

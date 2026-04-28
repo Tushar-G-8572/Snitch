@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { createProduct, editProduct, getProductfromProductId, getProducts, getSellerProduct,editProductVariants } from "../services/product.api";
+import { createProduct, editProduct, getProductfromProductId, getProducts, getSellerProduct,editProductVariants, addToWishlist, getWishListProduct } from "../services/product.api";
 import { setSellerProducts, setProducts, setLoading, setError } from "../state/product.slice";
 
 export const useProducts = () => {
@@ -97,13 +97,39 @@ export const useProducts = () => {
     }
   }
 
+  async function handleGetWishlistProduct() {
+    try{
+      dispatch(setLoading(true));
+      const result = await getWishListProduct();
+      dispatch(setProducts(result.wishList));
+    }catch(error){
+      console.error(error);
+      dispatch(setError(error.response?.message || "Error"));
+    }finally{
+      dispatch(setLoading(false));
+    }
+  }
+
+  async function handleAddTowishList(productId) {
+    try{
+
+      await addToWishlist(productId);
+      return true
+    }catch(error){
+      console.error(error);
+      return false;
+    }
+  }
+
   return { 
      handleCreateProduct,
      handleGetAllProducts, 
      handleGetSellerProducts, 
      handleGetProductFromProductId,
      handleEditProduct,
-     handleEditProductVarient
+     handleEditProductVarient,
+     handleAddTowishList,
+     handleGetWishlistProduct
     };
 
 }

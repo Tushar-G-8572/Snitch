@@ -21,3 +21,10 @@ export const removeAddToCartProduct = async(itemId)=>{
     const response = await api.delete(`/item/${itemId}`);
     return response.data;
 }
+
+export const updateCartQuantity = async(itemId,quantity)=>{
+    console.log("api",quantity)
+    const response = await api.patch(`/item/${itemId}`,{quantity});
+    console.log(response.data);
+    return response.data;
+}
