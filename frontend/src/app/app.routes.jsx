@@ -11,6 +11,7 @@ import AddToCartPage from "../feature/product/pages/AddToCartPage";
 import WishListPage from "../feature/product/pages/WishListPage";
 import ProfilePage from "../feature/shared/pages/ProfilePage";
 import OrdersPage from "../feature/shared/pages/OrdersPage";
+import Negotiation from "../feature/product/AI/Negotiation";
 
 export const router = createBrowserRouter([
     {
@@ -44,6 +45,10 @@ export const router = createBrowserRouter([
     {
         path:'/orders',
         element:<OrdersPage />
+    },
+    {
+        path:'/negotiate',
+        element:<Negotiation />
     },
     {
         path:'/seller',

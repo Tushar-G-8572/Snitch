@@ -28,3 +28,17 @@ export const updateCartQuantity = async(itemId,quantity)=>{
     console.log(response.data);
     return response.data;
 }
+
+export const createOrder = async()=>{
+    const response = await api.post('/payment/create/order')
+    return response.data
+}
+
+export const varifyPaymentOrder = async({razorpay_order_id,razorpay_payment_id,razorpay_signature})=>{
+    const response = await api.post('/payment/varify/order',{
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature
+    })
+    return response.data
+}

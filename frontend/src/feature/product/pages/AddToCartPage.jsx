@@ -3,6 +3,9 @@ import { useCart } from '../hooks/useCart';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import Navbar from '../../shared/components/Navbar';
+import { useRazorpay, RazorpayOrderOptions } from "react-razorpay";
+
+
 
 const fmt = (amount, currency = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
@@ -208,7 +211,8 @@ const CartItem = memo(({ item, onIncrement, onDecrement, onRemove, navigate }) =
 });
 
 /* ── Order Summary ── */
-function OrderSummary({ items, total, onNegotiate, onNavigate }) {
+function OrderSummary({ items, total, onNavigate,handleCheckout }) {
+  const navigate = useNavigate();
   const isHighValue = total >= 5000;
 
   return (
@@ -254,25 +258,23 @@ function OrderSummary({ items, total, onNegotiate, onNavigate }) {
       {isHighValue ? (
         <div className="flex flex-col gap-3">
           <div className="bg-gradient-to-br from-violet-100 to-purple-100 border border-purple-200 rounded-2xl px-4 py-3 text-center">
-            <div className="text-2xl mb-1">🤖✨</div>
             <p className="text-xs text-purple-800 font-semibold leading-snug">
               Your cart is above ₹5,000! Let our AI negotiate a special discount for you.
             </p>
           </div>
           <button
-            onClick={onNegotiate}
-            className="w-full py-3.5 bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-xl text-sm font-bold tracking-wide shadow-lg shadow-violet-200 hover:opacity-90 transition-opacity cursor-pointer border-none"
+            onClick={()=>{navigate('/negotiate')}}
+            className="w-full py-3.5 bg-gradient-to-br from-violet-600 active:scale-95 to-indigo-600 text-white rounded-xl text-sm font-bold tracking-wide shadow-lg shadow-violet-200 hover:opacity-90 transition-opacity cursor-pointer border-none"
           >
-            🤖 Negotiate with Seller
+             Negotiate with Seller
           </button>
-          <button className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
+          <button onClick={handleCheckout} className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
             Buy Now
           </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-2xl px-4 py-3 text-center">
-            <div className="text-xl mb-1">🎯</div>
             <p className="text-xs text-orange-800 font-semibold leading-snug">
               Add {fmt(5000 - total)} more to unlock AI price negotiation &amp; exclusive seller discounts!
             </p>
@@ -283,7 +285,7 @@ function OrderSummary({ items, total, onNegotiate, onNavigate }) {
           >
             + Add More Items
           </button>
-          <button className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
+          <button onClick={handleCheckout} className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
             Buy Now
           </button>
         </div>
@@ -301,10 +303,13 @@ function OrderSummary({ items, total, onNegotiate, onNavigate }) {
 
 /* ══════════════════════════════════════════════ */
 const AddToCartPage = () => {
+  const { error, isLoading, Razorpay } = useRazorpay();
   const navigate = useNavigate();
-  const { handleGetAddToCartProduct, handleUpdateQuantity, handleRemoveAddToCart } = useCart();
+  const { handleGetAddToCartProduct, handleUpdateQuantity, handleRemoveAddToCart,handleVerifyPayment,handleCreateOrder } = useCart();
   const cartProducts = useSelector(state => state.cart.cartProducts);
   const loading = useSelector(state => state.cart.loading);
+  const user = useSelector(state => state.auth.user)
+  
   const [showNegotiate, setShowNegotiate] = useState(false);
 
   useEffect(() => { handleGetAddToCartProduct(); }, []);
@@ -327,6 +332,38 @@ const AddToCartPage = () => {
     await handleRemoveAddToCart(itemId);
     await handleGetAddToCartProduct();
   }, [handleRemoveAddToCart, handleGetAddToCartProduct]);
+
+  async function handleCheckout() {
+    const {order} = await handleCreateOrder();
+    // console.log(order)
+       const options = {
+      key: "rzp_test_SjCBx5D5qOsvTH",
+      amount: order.amount, 
+      currency: order.currency,
+      name: "Snitch",
+      description: "Test Transaction",
+      order_id: order.id, // Generate order_id on server
+      handler:async (response) => {
+        console.log(response);
+       const flag = await handleVerifyPayment(response)
+       if(flag){
+        navigate('/orders')
+       }
+        // alert("Payment UnSuccessful!");
+      },
+      prefill: {
+        name: user.fullName,
+        email: user.email,
+        contact: "9999999999",
+      },
+      theme: {
+        color: "#F37254",
+      },
+    };
+
+    const razorpayInstance = new Razorpay(options);
+    razorpayInstance.open();
+  }
 
   if (loading && items.length === 0) return <CartSkeleton />;
   if (!loading && items.length === 0) return <EmptyCart onNavigate={() => navigate('/')} />;
@@ -372,7 +409,8 @@ const AddToCartPage = () => {
             <OrderSummary
               items={items}
               total={total}
-              onNegotiate={() => setShowNegotiate(true)}
+              handleCheckout={handleCheckout}
+              // onNegotiate={() => setShowNegotiate(true)}
               onNavigate={() => navigate('/')}
             />
           </div>

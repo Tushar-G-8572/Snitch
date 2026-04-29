@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { addToCartApi, getAddToCartProducts, removeAddToCartProduct, updateCartQuantity } from "../services/cart.api";
+import { addToCartApi, createOrder, getAddToCartProducts, removeAddToCartProduct, updateCartQuantity, varifyPaymentOrder } from "../services/cart.api";
 import { setCart, setLoading, setError, setCartProducts, updateItemQuantity } from "../state/cart.slice";
 
 export const useCart = () => {
@@ -54,5 +54,15 @@ export const useCart = () => {
         }
     }
 
-    return { handleAddToCart, handleGetAddToCartProduct, handleRemoveAddToCart, handleUpdateQuantity };
+    async function handleCreateOrder() {
+        const order = await createOrder();
+        return order;
+    }
+
+    async function handleVerifyPayment(response) {
+        const result = await varifyPaymentOrder(response)
+        return result.success;
+    }
+
+    return { handleAddToCart, handleGetAddToCartProduct,handleVerifyPayment, handleRemoveAddToCart,handleCreateOrder, handleUpdateQuantity };
 };

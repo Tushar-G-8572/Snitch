@@ -87,8 +87,7 @@ export async function handleGooleSignupAndLogin(req,res) {
         if(user){
             const token = createToken(user._id,user.role);
             res.cookie('token', token);
-            res.redirect(config.BASE_URI);
-            return res.status(200).json({success:true,message:"User logged in successfully"})
+           return res.redirect(config.BASE_URI);
         }
         const userName = given_name.split(' ').join('').toLocaleLowerCase() + sub.split('').reverse().join('').substring(0,5);
         const newUser = userModel.create({
@@ -98,8 +97,7 @@ export async function handleGooleSignupAndLogin(req,res) {
         })
         const token = createToken(newUser._id,newUser.role);
         res.cookie('token', token);
-        res.redirect(config.BASE_URI);
-        return res.status(201).json({success:true,message:"User Signed Up successfully"})
+       return res.redirect(config.BASE_URI);
 
     }catch(error){
         console.log(error);
