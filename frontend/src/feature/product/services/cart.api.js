@@ -42,3 +42,8 @@ export const varifyPaymentOrder = async({razorpay_order_id,razorpay_payment_id,r
     })
     return response.data
 }
+
+export const getOrdersDetails = async()=>{
+    const response = await api.get('/order');
+    return response.data
+}

@@ -185,7 +185,7 @@ export async function createOrderController(req,res) {
     const cart = await getCartDetail(req.user.id);
     if(!cart){
         return res.status(404).json({success:false,message:"Cart is empty"})
-    }
+    }   
     // console.log(cart);
     const order = await createOrder({amount:cart.total, currency:cart.items[0].price.currency});
 
@@ -252,4 +252,19 @@ console.log(razorpay_order_id,razorpay_payment_id,razorpay_signature);
     return res.status(200).json({success:true,message:"payment done"})
 
 
+}
+
+export async function handleGetOrders(req,res) {
+    try{
+        const userId = req.user.id;
+        const ordersStatus = await paymentModel.find({user:userId});
+        console.log(ordersStatus[0].status);
+        if(ordersStatus[0].status === 'paid'){
+            const orders = await getCartDetail(userId); 
+            return res.status(200).json({success:true,orders})
+        }
+    }catch(error){
+        console.error(error);
+        return res.status(400).json({success:false,message:"Error while fetching orders"})
+    }
 }

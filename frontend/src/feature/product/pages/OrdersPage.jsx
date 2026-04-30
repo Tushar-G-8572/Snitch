@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router';
-import Navbar from '../components/Navbar';
+import Navbar from '../../shared/components/Navbar';
+import { useCart } from '../hooks/useCart';
 
 /* ── Replace this with your real Redux orders state / API hook ── */
-const DUMMY_ORDERS = [
+const orders = [
     {
         _id: 'ORD001',
         createdAt: '2026-04-25T10:30:00Z',
@@ -66,22 +67,24 @@ const DUMMY_ORDERS = [
 ];
 
 const STATUS_CONFIG = {
-    Delivered:  { bg: '#f0faf4', color: '#2d7d52' },
-    Shipped:    { bg: '#fffbf0', color: '#b07d1a' },
+    Delivered: { bg: '#f0faf4', color: '#2d7d52' },
+    Shipped: { bg: '#fffbf0', color: '#b07d1a' },
     Processing: { bg: '#f0f4ff', color: '#3b5bbf' },
-    Cancelled:  { bg: '#fff5f5', color: '#c0392b' },
+    Cancelled: { bg: '#fff5f5', color: '#c0392b' },
 };
 
 const OrdersPage = () => {
     const user = useSelector(state => state.auth.user);
     const navigate = useNavigate();
 
-    /* 
-     * Replace DUMMY_ORDERS with your actual API call, e.g.:
-     * const orders = useSelector(state => state.orders.orders);
-     * useEffect(() => { dispatch(fetchOrders()); }, []);
-     */
-    const orders = DUMMY_ORDERS;
+    // const { handleGetOrders } = useCart();
+
+    // useEffect(() => {
+    //     handleGetOrders();
+    // }, []);
+
+    // const orders = useSelector(state => state.cart.cartProducts) || [];
+    // console.log(orders);
 
     if (!user) {
         return (

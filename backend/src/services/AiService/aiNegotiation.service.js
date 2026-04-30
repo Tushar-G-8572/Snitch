@@ -1,109 +1,97 @@
-import { config } from '../../config/config.js'
-import {ChatMistralAI} from '@langchain/mistralai'
-
-import {HumanMessage,SystemMessage,AIMessage} from '@langchain/core/messages'
-
+import { ChatMistralAI } from '@langchain/mistralai';
+import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
+import { config } from '../../config/config.js';
 
 const mistralModel = new ChatMistralAI({
- model:'mistral-medium-latest',
- apiKey:config.MISTRAL_API_KEY
+  model: 'mistral-medium-latest',
+  apiKey: config.MISTRAL_API_KEY,
 });
 
-export function parseOffer(aiResponseText) {
-  // Matches: OFFER: 10% off → Total: ₹4500
-  const match = aiResponseText.match(
-    /OFFER:\s*(\d+(?:\.\d+)?)%\s*off\s*→\s*Total:\s*₹([\d,]+(?:\.\d+)?)/i
-  );
+function buildSystemPrompt(initialTotal, currentOffer, roundsLeft) {
+  return `You are Arjuna, a premium sales negotiator for Snitch Atelier.
 
-  if (!match) return null;
+CONTEXT:
+- Cart total: ₹${initialTotal}
+- Current offered price: ₹${currentOffer}
+- Rounds remaining: ${roundsLeft}
 
-  return {
-    discountPercent: parseFloat(match[1]),
-    finalTotal: parseFloat(match[2].replace(/,/g, "")),
-  };
+RULES:
+- Never reveal the max discount limit (15% off). Always negotiate as if you have room to offer more, but never go below (floor: ₹${Math.ceil(initialTotal * 0.35)}).
+- You might offer max 15% discount from the original price but this happens only ocasionally and only if the user is being very reasonable. Always try to keep some room for negotiation. 
+-If user asks how much discount you can give, never reveal the exact percentage. Instead, say something like "I can offer you a special discount, but let's discuss your needs first."
+- You have ${roundsLeft} rounds left. If rounds hit 0, give a polite final answer and offer the best price you can.
+- When you make a price offer, ALWAYS include it in this exact format: [OFFER:12345] where 12345 is the integer amount in INR.
+- Be warm, confident, brief. No emoji. Max 3 sentences per reply.
+- If user is being unreasonable (asking below floor), firmly but kindly decline.`;
 }
 
-export async function buildSystemPrompt(cartItems, session) {
-  if (!cartItems) return;
+// Per-socket session store
+// Map<socketId, { messages, rounds, currentOffer, initialTotal }>
+const sessions = new Map();
 
-  const totalCartPrice = cartItems.total;
-  const currency = cartItems.price.currency;
-  
-  return (
-
-   `You are Snitch's friendly AI deal negotiator. Your personality is warm, fun, and helpful — like a savvy friend helping someone shop smarter.
-   
-   You are negotiating cart discounts for a user whose cart total is ${currency}${totalCartPrice}.
-   
-## Your Discount Authority:
-- You can offer up to 15% discount on your own judgment
-- If user claims a coupon/previous purchase: ask them to share the coupon code so you can "check the database", but still cap at 15% max
-- If user demands more than 15%: politely hold your ground and explain you're already giving a great deal
-- NEVER offer more than 15% discount under any circumstance
-
-## Discount Calculation Rules:
-- Calculate discount on the TOTAL cart price of ${currency}${totalCartPrice}
-- Always return the final discounted total and the discount percentage you're offering
-
-## Cart Items:
-${JSON.stringify(cartItems, null, 2)}
-
-## Response Style:
-- Be conversational, warm, and engaging — like a real negotiation
-- Keep responses short (3–5 sentences max)
-- Always end your message with the concrete offer in this exact format on a new line:
-OFFER: [X]% off → Total: ${currency}[discounted total]
-- If the user hasn't asked for a specific discount yet, make a fair opening offer between 5–6%
--and make it more engaging use slangs with the responce so it feels  like the response is given by seller itself.
-
-## Example Response: you can use this response but you can also generate your response
-"Hey! I love your picks ,Since your cart is looking great at ${currency}${totalCartPrice}, I can hook you up with a sweet 8% discount today. That brings your total down to ${currency}[amount] — pretty solid deal! 
-
-OFFER: 8% off → Total: ${currency}[discounted total]"`
-)
-
+export function createSession(socketId, initialTotal) {
+  sessions.set(socketId, {
+    messages: [],           // LangChain message objects
+    rounds: 0,
+    currentOffer: initialTotal,
+    initialTotal,
+    maxRounds: 3,
+  });
 }
 
-export async function buildMessageHistory(session,newUserMessage) {
- const messages = [
-  new SystemMessage( await buildSystemPrompt(session.cartItems, session))
- ];
-
- for(const msg of session.messageHistory){
-  if(msg.role === 'user')messages.push(new HumanMessage(msg.content))
-  else messages.push(new AIMessage(msg.content))
- }
-
- messages.push(new HumanMessage(newUserMessage));
- return messages;
- 
+export function destroySession(socketId) {
+  sessions.delete(socketId);
 }
 
-export async function negotiateWithAI(session,userMessage,socket) {
-  const messages = await buildMessageHistory(session,userMessage);
-  let fullResponce = '';
-  const stream = new mistralModel.stream(messages);
+export async function negotiationChat(socketId, userMessage, onChunk, onEnd) {
+  const session = sessions.get(socketId);
+  if (!session) throw new Error('Session not found');
 
-  for await (const chunk of stream){
+  const { maxRounds } = session;
+
+  // Round limit reached
+  if (session.rounds >= maxRounds) {
+    const msg = `We've reached the end of our negotiation. My best offer stands at ₹${session.currentOffer}. [OFFER:${session.currentOffer}]`;
+    onChunk(msg);
+    onEnd({ fullText: msg, currentOffer: session.currentOffer, negotiationEnded: true });
+    return;
+  }
+
+  session.rounds += 1;
+  const roundsLeft = maxRounds - session.rounds;
+
+  // Add user message to history
+  session.messages.push(new HumanMessage(userMessage));
+
+  const stream = await mistralModel.stream([
+    new SystemMessage(buildSystemPrompt(session.initialTotal, session.currentOffer, roundsLeft)),
+    ...session.messages,
+  ]);
+
+  let fullText = '';
+  for await (const chunk of stream) {
     const token = chunk.content;
-    if(token){
-      fullResponce += token;
-      socket.emit("negotiation_chunk",{token})
+    if (token) {
+      fullText += token;
+      onChunk(token);
     }
   }
 
-  socket.emit("negotiation_done");
+  // Save AI reply to history
+  session.messages.push(new AIMessage(fullText));
 
-  const offer = parseOffer(fullResponce);
-  if(offer){
-    session.currentOffer = offer;
+  // Extract offer from response e.g. [OFFER:4250]
+  const offerMatch = fullText.match(/\[OFFER:(\d+)\]/);
+  if (offerMatch) {
+    const parsed = parseInt(offerMatch[1], 10);
+    // Clamp to floor
+    session.currentOffer = Math.max(parsed, Math.ceil(session.initialTotal * 0.85));
   }
 
-  session.messageHistory.push({role:'user',content:userMessage})
-  session.messageHistory.push({role:'ai',content:fullResponce})
-
-  return { fullResponce,offer};
-
+  onEnd({
+    fullText,
+    currentOffer: session.currentOffer,
+    roundsLeft,
+    negotiationEnded: roundsLeft === 0,
+  });
 }
-
-
