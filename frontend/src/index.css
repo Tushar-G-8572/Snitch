@@ -1,0 +1,163 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-on-surface font-sans antialiased;
+    background-color: #0a0a0a;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight;
+  }
+
+  ::selection {
+    background: rgba(232, 201, 126, 0.25);
+    color: #f0ede8;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #2e2e2e; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #e8c97e44; }
+}
+
+@layer components {
+  /* Glass / frosted top bar */
+  .glass-panel {
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Ghost input with animated bottom border */
+  .input-dark {
+    @apply w-full bg-transparent border border-outline-variant rounded-none
+           px-4 py-3 text-on-surface placeholder:text-on-surface-variant
+           font-sans text-sm outline-none
+           transition-all duration-300;
+    background: #141414;
+    border-color: #2e2e2e;
+  }
+  .input-dark:focus {
+    border-color: #e8c97e;
+    box-shadow: 0 0 0 1px rgba(232, 201, 126, 0.2);
+    background: #181818;
+  }
+
+  /* Primary gold button */
+  .btn-primary {
+    @apply w-full font-sans font-medium tracking-wider text-sm
+           py-4 transition-all duration-300 cursor-pointer relative overflow-hidden;
+    background: #e8c97e;
+    color: #0a0a0a;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.3s;
+  }
+  .btn-primary:hover::after { background: rgba(255,255,255,0.08); }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Outline / ghost button */
+  .btn-outline {
+    @apply flex-1 py-3 flex justify-center items-center gap-2 font-sans text-sm
+           transition-all duration-300 cursor-pointer;
+    border: 1px solid #2e2e2e;
+    color: #888580;
+    background: transparent;
+  }
+  .btn-outline:hover {
+    border-color: #e8c97e44;
+    color: #f0ede8;
+    background: rgba(232, 201, 126, 0.04);
+  }
+
+  /* Role toggle pill */
+  .role-tab {
+    @apply flex-1 py-3 text-sm font-sans tracking-wide transition-all duration-300 cursor-pointer;
+    color: #888580;
+    background: transparent;
+  }
+  .role-tab.active {
+    color: #e8c97e;
+    background: rgba(232, 201, 126, 0.08);
+    border-bottom: 1px solid #e8c97e;
+  }
+  .role-tab:not(.active):hover {
+    color: #f0ede8;
+  }
+
+  /* Card containers */
+  .card-dark {
+    background: #111111;
+    border: 1px solid #1e1e1e;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Divider with text */
+  .divider-text {
+    @apply relative flex items-center my-6;
+  }
+  .divider-text::before,
+  .divider-text::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #1e1e1e;
+  }
+  .divider-text span {
+    @apply px-4 text-xs text-on-surface-variant font-sans tracking-widest uppercase;
+  }
+
+  /* Animated fade-up on load */
+  .animate-fade-up {
+    animation: fadeUp 0.5s ease both;
+  }
+  .animate-fade-up-delay {
+    animation: fadeUp 0.5s ease 0.15s both;
+  }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Product detail page light overrides */
+.pdp-cart-btn:hover {
+  background-color: #1a1a1a !important;
+  color: #fff !important;
+}
+.pdp-buy-btn:hover {
+  background-color: #2d3435 !important;
+}
+.pdp-qty-btn:hover {
+  background-color: #f2f4f4 !important;
+}
