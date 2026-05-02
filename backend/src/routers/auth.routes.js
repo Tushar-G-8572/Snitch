@@ -1,7 +1,7 @@
 import { Router } from "express";
 const authRouter = Router();
 import { registerValidator, loginValidator } from "../validators/auth.validator.js";
-import { registerController, loginController,  get_MEController, handleGooleSignupAndLogin, changeRoleController, handleLogoutController } from "../controller/auth.controller.js";
+import { registerController, loginController,  get_MEController,handleGoogleSignupAndLogin, changeRoleController, handleLogoutController } from "../controller/auth.controller.js";
 import passport from "passport";
 import { authUserMiddleware } from "../middleware/auth.middleware.js";
 
@@ -13,7 +13,7 @@ authRouter.get('/get-me',authUserMiddleware,get_MEController);
 
 authRouter.get('/google',passport.authenticate('google',{scope:["profile","email"]}))
 
-authRouter.get('/google/callback',passport.authenticate('google',{session:false,failureRedirect:"/"}),handleGooleSignupAndLogin)
+authRouter.get('/google/callback',passport.authenticate('google',{session:false,failureRedirect:"/"}),handleGoogleSignupAndLogin)
 
 authRouter.post('/change-role',authUserMiddleware,changeRoleController);
 

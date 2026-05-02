@@ -7,12 +7,16 @@ const cartSlice = createSlice({
         loading: false,
         error: null,
         cartProducts: [],
+        socketId:null,
+        discountCoupon:null
     },
     reducers: {
         setCart: (state, action) => { state.cart = action.payload },
         setLoading: (state, action) => { state.loading = action.payload },
         setError: (state, action) => { state.error = action.payload },
         setCartProducts: (state, action) => { state.cartProducts = action.payload },
+        setSocketId:(state,action)=> {state.socketId = action.payload},
+        setDiscountCoupon:(state,action)=> {state.discountCoupon = action.payload},
 
         // Surgically update only one item's quantity — no full re-render
         updateItemQuantity: (state, action) => {
@@ -28,4 +32,4 @@ const cartSlice = createSlice({
 });
 
 export default cartSlice.reducer;
-export const { setCart, setLoading, setError, setCartProducts, updateItemQuantity } = cartSlice.actions;
+export const { setCart, setLoading, setError,setDiscountCoupon, setSocketId, setCartProducts, updateItemQuantity } = cartSlice.actions;

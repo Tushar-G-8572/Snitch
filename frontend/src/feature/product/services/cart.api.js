@@ -47,3 +47,11 @@ export const getOrdersDetails = async()=>{
     const response = await api.get('/order');
     return response.data
 }
+
+export const getDiscount = async(socketId,discountCoupon)=>{
+    console.log(socketId,discountCoupon)
+    const response = await api.post('/discount',{socketId,discountCoupon})
+    console.log(response.data);
+    console.log(response.data.cartDiscountedPrice)
+    return response.data;
+}

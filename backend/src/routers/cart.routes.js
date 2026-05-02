@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authUserMiddleware } from "../middleware/auth.middleware.js";
 import { validateAddToCart } from "../validators/cart.validator.js";
-import { addToCart, getAddToCartProduct, createOrderController,handleGetOrders, removeAddToCartProduct, updateCartProductQuantity, verifyPaymentOrder } from "../controller/cart.controller.js";
+import { addToCart, getAddToCartProduct, createOrderController,handleGetOrders, removeAddToCartProduct, updateCartProductQuantity, verifyPaymentOrder, handleDiscountCoupon } from "../controller/cart.controller.js";
 
 const cartRouter = Router();
 
@@ -18,5 +18,7 @@ cartRouter.post('/payment/create/order',authUserMiddleware,createOrderController
 cartRouter.post('/payment/varify/order',authUserMiddleware,verifyPaymentOrder)
 
 cartRouter.get('/order',authUserMiddleware,handleGetOrders);
+
+cartRouter.post('/discount',authUserMiddleware,handleDiscountCoupon)
 
 export default cartRouter;

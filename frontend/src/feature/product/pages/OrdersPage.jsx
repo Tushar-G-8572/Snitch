@@ -4,7 +4,6 @@ import { useNavigate, Link } from 'react-router';
 import Navbar from '../../shared/components/Navbar';
 import { useCart } from '../hooks/useCart';
 
-/* ── Replace this with your real Redux orders state / API hook ── */
 const orders = [
     {
         _id: 'ORD001',

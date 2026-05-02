@@ -39,11 +39,7 @@ export const useAuth = () => {
       const response = await getMe();
       dispatch(setUser(response.user));
     } catch (error) {
-
       console.error(error);
-      dispatch(setError(
-        error?.response?.data?.message || error?.message || "Error"
-      ));
     } finally {
       dispatch(setLoading(false));
       dispatch(setAuthChecked(true))

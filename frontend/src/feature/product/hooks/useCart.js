@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
-import { addToCartApi, createOrder, getAddToCartProducts, getOrdersDetails, removeAddToCartProduct, updateCartQuantity, varifyPaymentOrder } from "../services/cart.api";
-import { setCart, setLoading, setError, setCartProducts, updateItemQuantity } from "../state/cart.slice";
+import { addToCartApi, createOrder, getAddToCartProducts, getDiscount, getOrdersDetails, removeAddToCartProduct, updateCartQuantity, varifyPaymentOrder } from "../services/cart.api";
+import { setCart, setLoading, setError,setSocketId, setCartProducts, updateItemQuantity } from "../state/cart.slice";
 
 export const useCart = () => {
     const dispatch = useDispatch();
@@ -70,5 +70,17 @@ export const useCart = () => {
         return result.success
     }
 
-    return { handleAddToCart,handleGetOrders, handleGetAddToCartProduct,handleVerifyPayment, handleRemoveAddToCart,handleCreateOrder, handleUpdateQuantity };
+    async function handleDiscount(socketId,discountCoupon) {
+        try{
+            const result = await getDiscount(socketId,discountCoupon);
+            dispatch(setCartProducts(result.cartDiscountedPrice));
+            return result.success;
+
+        }catch(error){
+            await handleGetAddToCartProduct();
+            dispatch(setError(error?.response?.data?.message || error?.message || "Error"))
+        }
+    }
+
+    return { handleAddToCart,handleGetOrders,handleDiscount, handleGetAddToCartProduct,handleVerifyPayment, handleRemoveAddToCart,handleCreateOrder, handleUpdateQuantity };
 };
