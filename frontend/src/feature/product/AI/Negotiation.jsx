@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import Navbar from '../../shared/components/Navbar';
 import { useRazorpay } from 'react-razorpay';
 import { useCart } from '../hooks/useCart';
 import socket from '../utils/socket.service';
+import { setDiscountCoupon } from '../state/cart.slice';
 
 const fmt = (amount, currency = 'INR') =>
   new Intl.NumberFormat('en-IN', {
@@ -17,14 +18,11 @@ const Negotiation = () => {
   const user = useSelector((state) => state.auth.user);
   const { Razorpay } = useRazorpay();
 
-  useEffect(()=>{
-    handleGetAddToCartProduct()
-  },[])
+  useEffect(() => {
+    handleGetAddToCartProduct();
+  }, []);
 
-  const cartProducts = useSelector(state=> state.cart.cartProducts);
-
-  // console.log(cartProducts)
-
+  const cartProducts = useSelector(state => state.cart.cartProducts);
   const cart = Array.isArray(cartProducts) && cartProducts.length > 0 ? cartProducts[0] : cartProducts;
   const items = cart?.items || [];
   const initialTotal = items.reduce(
@@ -35,13 +33,16 @@ const Negotiation = () => {
   const [messages, setMessages] = useState([]);
   const [streamingToken, setStreamingToken] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  // const [inputText, setInputText] = useState('');
   const [currentOffer, setCurrentOffer] = useState(initialTotal);
   const [roundsLeft, setRoundsLeft] = useState(3);
   const [negotiationEnded, setNegotiationEnded] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [couponCode, setCouponCode] = useState(null);       // e.g. "SNITCH15"
+  const [couponUnlocked, setCouponUnlocked] = useState(false);
+  const [couponCopied, setCouponCopied] = useState(false);
   const inputRef = useRef({});
   const messagesEndRef = useRef(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (initialTotal > 0) {
@@ -52,9 +53,7 @@ const Negotiation = () => {
   }, [initialTotal]);
 
   useEffect(() => {
-    // Negotiation.jsx ke useEffect mein
     socket.on('negotiation_ready', () => {
-      // console.log('ready! total from ref:', initialTotalRef.current);
       setIsReady(true);
       setMessages([{
         role: 'ai',
@@ -66,14 +65,32 @@ const Negotiation = () => {
       setStreamingToken((prev) => prev + token);
     });
 
-    socket.on('stream_end', ({ fullText, currentOffer: newOffer, roundsLeft: rl, negotiationEnded: ended }) => {
-      const cleanText = fullText.replace(/\[OFFER:\d+\]/g, '').trim();
+    socket.on('stream_end', ({
+      fullText,
+      currentOffer: newOffer,
+      roundsLeft: rl,
+      negotiationEnded: ended,
+      couponCode: code,
+      couponUnlocked: unlocked,
+    }) => {
+      const cleanText = fullText
+        .replace(/\[OFFER:\d+\]/g, '')
+        .replace(/\[COUPON:[A-Z0-9]+\]/g, '')
+        .trim();
+
       setMessages((prev) => [...prev, { role: 'ai', text: cleanText }]);
       setStreamingToken('');
       setIsStreaming(false);
       if (newOffer) setCurrentOffer(newOffer);
       if (rl !== undefined) setRoundsLeft(rl);
       if (ended) setNegotiationEnded(true);
+
+      // Coupon unlock
+      if (unlocked && code) {
+        dispatch(setDiscountCoupon(code));
+        setCouponCode(code);
+        setCouponUnlocked(true);
+      }
     });
 
     socket.on('stream_error', (msg) => {
@@ -88,34 +105,40 @@ const Negotiation = () => {
       socket.off('stream_end');
       socket.off('stream_error');
     };
-  }, []); 
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingToken]);
 
   const handleSend = useCallback(() => {
-    // console.log(inputRef.current.name.value.trim());
-    // const text = inputText.trim();
-    const text = inputRef.current.name.value.trim()
+    const text = inputRef.current.name.value.trim();
     if (!text || isStreaming || negotiationEnded || !isReady) return;
 
     setMessages((prev) => [...prev, { role: 'user', text }]);
-   inputRef.current.name.value = ''
+    inputRef.current.name.value = '';
     setIsStreaming(true);
     socket.emit('chat_message', { inputText: text });
   }, [inputRef, isStreaming, negotiationEnded, isReady]);
 
-  const handleCheckout = async (priceToPay) => {
+  const handleCopyCoupon = () => {
+    if (!couponCode) return;
+    navigator.clipboard.writeText(couponCode).then(() => {
+      setCouponCopied(true);
+      setTimeout(() => navigate('/cart-items'), 2000);
+    });
+  };
+
+  const handleCheckout = async () => {
     const { order } = await handleCreateOrder();
-    // console.log(priceToPay);
-    // console.log("order",order)
     const options = {
       key: 'rzp_test_SjCBx5D5qOsvTH',
-      amount: priceToPay * 100,
+      amount: initialTotal * 100,       // always full price at checkout
       currency: order.currency || 'INR',
       name: 'Snitch Atelier',
-      description: 'Exclusive Negotiated Order',
+      description: couponCode
+        ? `Use coupon ${couponCode} at checkout`
+        : 'Exclusive Order',
       order_id: order.id,
       handler: async (response) => {
         const flag = await handleVerifyPayment(response);
@@ -129,10 +152,9 @@ const Negotiation = () => {
       theme: { color: '#1A1A1A' },
     };
     new Razorpay(options).open();
-
   };
 
-  const canSend = inputRef && !isStreaming  && isReady;
+  const canSend = inputRef && !isStreaming && isReady;
 
   return (
     <div className="min-h-screen bg-[#f9f9f9] text-[#2d3435] font-['Manrope'] flex flex-col">
@@ -154,17 +176,37 @@ const Negotiation = () => {
         {currentOffer !== initialTotal && (
           <div className="bg-[#ebeeef] border-l-4 border-[#5f5e5e] p-4 mb-5 rounded-r-lg flex justify-between items-center">
             <div>
-              <span className="block text-xs uppercase tracking-widest text-[#5a6061] font-bold mb-1">
-                Current Offer
+              <span className="block text-xs uppercase tracking-widest font-bold mb-1">
+                Current Price
               </span>
               <span className="text-2xl font-black text-[#1a1a1a]">{fmt(currentOffer)}</span>
-              <span className="text-xs text-[#5a6061] ml-2">
-                (saved {fmt(initialTotal - currentOffer)})
+            {negotiationEnded && (
+              <span className="block text-xs text-red-500 uppercase tracking-widest font-bold mb-1">
+                Current Discount is valid for 15 Minutes only so hurry up to grab the offer
+              </span>
+            )}
+            </div>
+          </div>
+        )}
+
+        {/* Coupon Banner — appears after round 3 */}
+        {couponUnlocked && couponCode && (
+          <div className="bg-[#1a1a1a] text-white p-4 mb-5 rounded-xl flex justify-between items-center">
+            <div>
+              <span className="block text-xs uppercase tracking-widest text-[#adb3b4] font-bold mb-1">
+                Your Exclusive Coupon
+              </span>
+              <span className="text-xl font-black tracking-widest">{couponCode}</span>
+              <span className="block text-xs text-[#adb3b4] mt-1">
+                Apply this at checkout to get your negotiated discount
               </span>
             </div>
-            {negotiationEnded && (
-              <span className="text-xs bg-[#1a1a1a] text-white px-3 py-1 rounded-full">Final Offer</span>
-            )}
+            <button
+              onClick={handleCopyCoupon}
+              className="text-xs border border-[#adb3b4] text-[#adb3b4] px-4 py-2 rounded-lg hover:bg-[#2d3435] hover:text-white transition-colors font-bold tracking-wide"
+            >
+              {couponCopied ? 'COPIED!' : 'COPY'}
+            </button>
           </div>
         )}
 
@@ -174,19 +216,22 @@ const Negotiation = () => {
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
-                    ? 'bg-[#1a1a1a] text-[#f9f9f9] rounded-br-sm'
-                    : 'bg-white text-[#2d3435] border border-[#e4e9ea] shadow-sm rounded-bl-sm'
+                  ? 'bg-[#1a1a1a] text-[#f9f9f9] rounded-br-sm'
+                  : 'bg-white text-[#2d3435] border border-[#e4e9ea] shadow-sm rounded-bl-sm'
                   }`}>
                   {msg.text}
                 </div>
               </div>
             ))}
 
-            {/* Streaming bubble — shows token accumulation live */}
+            {/* Streaming bubble */}
             {isStreaming && streamingToken && (
               <div className="flex justify-start">
                 <div className="max-w-[80%] p-4 rounded-2xl bg-white border border-[#e4e9ea] shadow-sm rounded-bl-sm text-sm leading-relaxed text-[#2d3435]">
-                  {streamingToken.replace(/\[OFFER:\d+\]/g, '').trim()}
+                  {streamingToken
+                    .replace(/\[OFFER:\d+\]/g, '')
+                    .replace(/\[COUPON:[A-Z0-9]+\]/g, '')
+                    .trim()}
                   <span className="inline-block w-1.5 h-4 bg-[#adb3b4] ml-1 animate-pulse rounded-sm" />
                 </div>
               </div>
@@ -200,9 +245,8 @@ const Negotiation = () => {
             <div className="flex items-center gap-3">
               <input
                 type="text"
-                ref={(e)=>inputRef.current.name = e}
+                ref={(e) => inputRef.current.name = e}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                // disabled={!canSend}
                 placeholder={
                   !isReady ? 'Connecting...' :
                     negotiationEnded ? 'Negotiation concluded.' :
@@ -221,25 +265,14 @@ const Negotiation = () => {
           </div>
         </div>
 
-        {/* Checkout Buttons */}
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => handleCheckout(currentOffer)}
-            className="w-full py-4 bg-[#1a1a1a] text-white rounded-xl text-sm font-bold tracking-widest hover:bg-[#2d3435] transition-colors shadow-md"
-          >
-            {currentOffer !== initialTotal
-              ? `ACCEPT & PAY ${fmt(currentOffer)}`
-              : `CHECKOUT AT ${fmt(initialTotal)}`}
-          </button>
-          {currentOffer !== initialTotal && (
-            <button
-              onClick={() => handleCheckout(initialTotal)}
-              className="w-full py-4 bg-transparent border-2 border-[#e4e9ea] text-[#5a6061] rounded-xl text-sm font-bold tracking-widest hover:bg-[#f2f4f4] transition-colors"
-            >
-              CHECKOUT AT FULL PRICE {fmt(initialTotal)}
-            </button>
-          )}
-        </div>
+        {/* Single Checkout Button */}
+        <button
+          onClick={handleCheckout}
+          className="w-full py-4 bg-[#1a1a1a] text-white rounded-xl text-sm font-bold tracking-widest hover:bg-[#2d3435] transition-colors shadow-md"
+        >
+          CHECKOUT AT {fmt(initialTotal)}
+        </button>
+
       </div>
     </div>
   );

@@ -92,6 +92,7 @@ export async function getCartDetail(userId) {
         _id: '$_id',
         user: { $first: '$user' },
         items: { $push: '$items' },
+        aiDiscount:{ $first: '$aiDiscount'},
         total: {
           $sum: {
             $multiply: [
@@ -99,6 +100,33 @@ export async function getCartDetail(userId) {
               '$items.quantity'
             ]
           }
+        }
+        }
+      },
+      {
+      $addFields: {
+        discountRate: {
+          $switch: {
+            branches: [
+              { case: { $eq: ['$aiDiscount', 'SNITCH5'] },  then: 0.05 },
+              { case: { $eq: ['$aiDiscount', 'SNITCH10'] }, then: 0.10 },
+              { case: { $eq: ['$aiDiscount', 'SNITCH15'] }, then: 0.15 },
+            ],
+            default: 0
+          }
+        }
+      }
+    },
+    {
+      $addFields: {
+        discountAmount: {
+          $round: [{ $multiply: ['$total', '$discountRate'] }, 2]
+        },
+        finalTotal: {
+          $round: [
+            { $multiply: ['$total', { $subtract: [1, '$discountRate'] }] },
+            2
+          ]
         }
       }
     }

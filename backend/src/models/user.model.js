@@ -30,6 +30,9 @@ const userSchema = new mongoose.Schema({
         type:String,
         enum:["Buyer","Seller"],
         default:"Buyer"
+    },
+    refreshToken:{
+        type:String,
     }
 },{
     timestamps:true

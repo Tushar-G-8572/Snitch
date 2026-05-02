@@ -33,7 +33,6 @@ export const useWishlist = () => {
             dispatch(toggleWishlistItem(productId));
             dispatch(setError(error.response?.message || "Error"));
         }
-        // ❌ No setLoading — that caused the full re-render
     }
 
     return { handleGetWishlistProduct, handleToggleWishlist, isWishlisted };

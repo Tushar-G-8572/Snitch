@@ -7,6 +7,8 @@ import { createOrder } from "../services/payment/payment.service.js";
 import { validatePaymentVerification } from "razorpay/dist/utils/razorpay-utils.js";
 import paymentModel from "../models/payment.model.js";
 import { config } from "../config/config.js";
+import redis from "../config/cache.config.js";
+import aiNegotiationModel from "../models/aiNegotiation.model.js";
 
 
 export async function addToCart(req, res) {
@@ -187,7 +189,8 @@ export async function createOrderController(req,res) {
         return res.status(404).json({success:false,message:"Cart is empty"})
     }   
     // console.log(cart);
-    const order = await createOrder({amount:cart.total, currency:cart.items[0].price.currency});
+    let amoutPay = Math.ceil(cart.finalTotal) ||cart.total
+    const order = await createOrder({amount:amoutPay, currency:cart.items[0].price.currency});
 
     const payment = await paymentModel.create({
         user:req.user?.id,
@@ -211,6 +214,12 @@ export async function createOrderController(req,res) {
             images: item.product.images || item.product.varients.images
         }))
     })
+
+    const aiPaymentId = await aiNegotiationModel.findOne({user:req.user?.id,cart:cart._id})
+
+    aiPaymentId.paymentId = payment._id;
+
+    await aiPaymentId.save();
 
     return res.status(200).json({success:true,order})
 }
@@ -267,4 +276,58 @@ export async function handleGetOrders(req,res) {
         console.error(error);
         return res.status(400).json({success:false,message:"Error while fetching orders"})
     }
+}
+
+export async function handleDiscountCoupon(req, res) {
+  try {
+    const userId = req.user.id;
+    // const {cartId} = req.params;
+    const { socketId, discountCoupon } = req.body;
+    // console.log(typeof(socketId))
+    console.log(socketId,discountCoupon)
+    // 1. Validate inputs early
+    if (!socketId || !discountCoupon) {
+      return res.status(400).json({ success: false, message: "socketId and discountCoupon are required" });
+    }
+
+    const cart = await cartModel.findOne({user:userId});
+    if (!cart) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
+
+    const aiRoundsCompleted = await aiNegotiationModel.findOne({$and:[{user:userId},{cart:cart._id}]});
+    if(aiRoundsCompleted){
+        return res.status(400).json({success:false,message:"You have already used the negotiation"})
+    }
+
+
+    // 2. Fetch the session from Redis
+    const raw = await redis.get(socketId.toString());
+    const validCoupon = JSON.parse(raw);
+    console.log(validCoupon)
+    if (!raw) {
+      cart.aiDiscount = null;  
+      await cart.save();
+      return res.status(400).json({ success: false, message: "Coupon code expired please refresh the page "});
+    }
+
+
+    // 3. Actually compare — this was the missing step
+    if (!validCoupon || validCoupon !== discountCoupon) {
+      return res.status(400).json({ success: false, message: "Invalid coupon code" });
+    }
+
+    cart.aiDiscount = discountCoupon;
+    await cart.save();
+
+    const getDiscountedPrice = await getCartDetail(userId);
+
+    await aiNegotiationModel.create({user:userId,cart:cart._id,totalAmount:cart.total,aiDiscountCoupon:cart.aiDiscount})
+
+    return res.status(200).json({ success: true, message: "Coupon applied successfully" ,cartDiscountedPrice:getDiscountedPrice });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
 }

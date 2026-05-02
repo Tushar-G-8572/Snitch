@@ -210,10 +210,21 @@ const CartItem = memo(({ item, onIncrement, onDecrement, onRemove, navigate }) =
   );
 });
 
+
+
 /* ── Order Summary ── */
-function OrderSummary({ items, total, onNavigate,handleCheckout }) {
+function OrderSummary({ items, total,finalTotal,errorMessage, onNavigate,handleGetAddToCartProduct, handleCheckout, discountCoupon,handleApplyDiscount }) {
   const navigate = useNavigate();
+  const [couponCode, setCouponCode] = useState(discountCoupon || '');
   const isHighValue = total >= 5000;
+
+  useEffect(() => {
+    if (discountCoupon) {
+      setCouponCode(discountCoupon);
+    }else{
+      handleGetAddToCartProduct()
+    }
+  }, [discountCoupon]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -235,6 +246,13 @@ function OrderSummary({ items, total, onNavigate,handleCheckout }) {
           );
         })}
       </div>
+        {/* {AI discount } */}
+      {finalTotal && <div className="flex flex-col gap-2 mb-5">
+        <div className="flex justify-between text-sm text-gray-500">
+          <span>AI Discount</span>
+          <span className="text-green-600 font-semibold">{fmt(total-finalTotal)}</span>
+        </div>
+      </div>}
 
       {/* Shipping / Tax */}
       <div className="flex flex-col gap-2 mb-5">
@@ -251,49 +269,67 @@ function OrderSummary({ items, total, onNavigate,handleCheckout }) {
       {/* Grand total */}
       <div className="flex justify-between items-center pt-4 border-t-2 border-gray-900 mb-6">
         <span className="text-xs font-black uppercase tracking-widest">Total</span>
-        <span className="text-3xl font-black tracking-tight">{fmt(total)}</span>
+        <span className="text-3xl font-black tracking-tight">{fmt(finalTotal||total)}</span>
       </div>
 
       {/* CTA section */}
-      {isHighValue ? (
-        <div className="flex flex-col gap-3">
-          <div className="bg-gradient-to-br from-violet-100 to-purple-100 border border-purple-200 rounded-2xl px-4 py-3 text-center">
-            <p className="text-xs text-purple-800 font-semibold leading-snug">
-              Your cart is above ₹5,000! Let our AI negotiate a special discount for you.
-            </p>
-          </div>
-          <button
-            onClick={()=>{navigate('/negotiate')}}
-            className="w-full py-3.5 bg-gradient-to-br from-violet-600 active:scale-95 to-indigo-600 text-white rounded-xl text-sm font-bold tracking-wide shadow-lg shadow-violet-200 hover:opacity-90 transition-opacity cursor-pointer border-none"
-          >
-             Negotiate with Seller
-          </button>
-          <button onClick={handleCheckout} className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
-            Buy Now
+      <div className="flex flex-col gap-3">
+        {isHighValue ? (
+          <>
+            <div className="bg-gradient-to-br from-violet-100 to-purple-100 border border-purple-200 rounded-2xl px-4 py-3 text-center">
+              <p className="text-xs text-purple-800 font-semibold leading-snug">
+                Your cart is above ₹5,000! Let our AI negotiate a special discount for you.
+              </p>
+            </div>
+            <button
+              onClick={()=>{navigate('/negotiate')}}
+              className="w-full py-3.5 bg-gradient-to-br from-violet-600 active:scale-95 to-indigo-600 text-white rounded-xl text-sm font-bold tracking-wide shadow-lg shadow-violet-200 hover:opacity-90 transition-opacity cursor-pointer border-none"
+            >
+               Negotiate with Seller
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-2xl px-4 py-3 text-center">
+              <p className="text-xs text-orange-800 font-semibold leading-snug">
+                Add {fmt(5000 - total)} more to unlock AI price negotiation &amp; exclusive seller discounts!
+              </p>
+            </div>
+            <button
+              onClick={onNavigate}
+              className="w-full py-3.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer bg-white"
+            >
+              + Add More Items
+            </button>
+          </>
+        )}
+
+        {/* Discount Input Box */}
+        <div className="flex gap-2 mt-2">
+          <input 
+            type="text" 
+            placeholder=" Discount coupon" 
+            value={couponCode}
+            disabled
+            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-900 outline-none focus:border-gray-900 transition-colors placeholder-gray-400 bg-gray-50 focus:bg-white"
+          />
+          <button onClick={handleApplyDiscount} className="px-6 py-3 bg-gray-900 text-white font-bold text-sm rounded-xl hover:bg-gray-800 transition-colors cursor-pointer border-none">
+            Apply
           </button>
         </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-2xl px-4 py-3 text-center">
-            <p className="text-xs text-orange-800 font-semibold leading-snug">
-              Add {fmt(5000 - total)} more to unlock AI price negotiation &amp; exclusive seller discounts!
-            </p>
-          </div>
-          <button
-            onClick={onNavigate}
-            className="w-full py-3.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer bg-white"
-          >
-            + Add More Items
-          </button>
-          <button onClick={handleCheckout} className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none">
-            Buy Now
-          </button>
-        </div>
-      )}
+
+        {errorMessage && <div>
+          <span className='text-xs font-bold text-red-500 '>{errorMessage}</span>
+          </div>}
+
+        <button onClick={handleCheckout} className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold tracking-widest hover:bg-gray-700 transition-colors cursor-pointer border-none mt-2">
+          Buy Now
+        </button>
+      </div>
 
       {/* Trust badges */}
       <div className="mt-5 flex flex-col gap-2">
-        {['✅ 100% Secure Checkout', '🔄 7-Day Return Policy', '🚚 Free Shipping on All Orders'].map(badge => (
+        {[' 100% Secure Checkout', ' 7-Day Return Policy', ' Free Shipping on All Orders'].map(badge => (
           <div key={badge} className="text-xs text-gray-400 flex items-center gap-1.5">{badge}</div>
         ))}
       </div>
@@ -305,10 +341,22 @@ function OrderSummary({ items, total, onNavigate,handleCheckout }) {
 const AddToCartPage = () => {
   const { error, isLoading, Razorpay } = useRazorpay();
   const navigate = useNavigate();
-  const { handleGetAddToCartProduct, handleUpdateQuantity, handleRemoveAddToCart,handleVerifyPayment,handleCreateOrder } = useCart();
+  const { handleGetAddToCartProduct, handleUpdateQuantity, handleRemoveAddToCart,handleDiscount,handleVerifyPayment,handleCreateOrder } = useCart();
   const cartProducts = useSelector(state => state.cart.cartProducts);
   const loading = useSelector(state => state.cart.loading);
   const user = useSelector(state => state.auth.user)
+  const socketId = useSelector(state => state.cart.socketId)
+  const discountCoupon = useSelector(state=> state.cart.discountCoupon)
+  const errorMessage = useSelector(state => state.cart.error);
+
+  console.log(socketId,discountCoupon);
+
+async function handleApplyDiscount() {
+  if(discountCoupon){
+    await handleDiscount(socketId,discountCoupon);
+  }
+  return;
+}
   
   const [showNegotiate, setShowNegotiate] = useState(false);
 
@@ -338,7 +386,7 @@ const AddToCartPage = () => {
     // console.log(order)
        const options = {
       key: "rzp_test_SjCBx5D5qOsvTH",
-      amount: order.amount, 
+      amount: order.finalTotal || order.amount, 
       currency: order.currency,
       name: "Snitch",
       description: "Test Transaction",
@@ -410,8 +458,13 @@ const AddToCartPage = () => {
               items={items}
               total={total}
               handleCheckout={handleCheckout}
+              handleGetAddToCartProduct={handleGetAddToCartProduct}
               // onNegotiate={() => setShowNegotiate(true)}
               onNavigate={() => navigate('/')}
+              discountCoupon={discountCoupon}
+              finalTotal={cartProducts.finalTotal}
+              handleApplyDiscount={handleApplyDiscount}
+              errorMessage={errorMessage}
             />
           </div>
 

@@ -31,7 +31,12 @@ const cartSchema = new mongoose.Schema({
     required:true
    }
   }
- ]
+ ],
+ aiDiscount: {
+    type: String,
+    enum: ['SNITCH5', 'SNITCH10', 'SNITCH15'],
+    default: null,
+  },
 
 })
 
