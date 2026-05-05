@@ -6,11 +6,11 @@ import SearchBar from './SearchBar';
 
 const Navbar = () => {
     const user = useSelector(state => state.auth.user);
-    const cartItems = useSelector(state => state.cart?.items || []);
+    const cartItems = useSelector(state => state.cart?.item || []);
     const navigate = useNavigate();
     const [profileOpen, setProfileOpen] = useState(false);
     const profileRef = useRef(null);
-    const {handleLogout} = useAuth()
+    const { handleLogout } = useAuth()
     // Close profile dropdown on outside click
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -22,7 +22,7 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleLogoutSubmit =  async() => {
+    const handleLogoutSubmit = async () => {
         await handleLogout();
         setProfileOpen(false);
         navigate('/login');
@@ -94,6 +94,17 @@ const Navbar = () => {
                                 />
                             </Link>
                         )}
+                        <Link
+                            to="/wishlist"
+                            className="relative text-[10px] font-medium tracking-[0.2em] uppercase transition-colors duration-200 group"
+                            style={{ color: '#7A6E63' }}
+                        >
+                            <span className="group-hover:text-[#C9A96E] transition-colors">Wishlist</span>
+                            <span
+                                className="absolute -bottom-px left-0 h-px w-0 group-hover:w-full transition-all duration-300"
+                                style={{ backgroundColor: '#C9A96E' }}
+                            />
+                        </Link>
                     </div>
 
                     {/* ── Right Actions ── */}
@@ -227,7 +238,7 @@ const Navbar = () => {
                                 <Link
                                     to="/login"
                                     className="text-[10px] font-medium tracking-[0.2em] uppercase transition-colors hover:text-[#C9A96E]"
-                                    style={{  color: '#1b1c1a' }}
+                                    style={{ color: '#1b1c1a' }}
                                 >
                                     Sign In
                                 </Link>
