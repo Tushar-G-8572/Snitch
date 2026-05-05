@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
 import { createProduct, editProduct, getProductfromProductId, getProducts, getSellerProduct,editProductVariants, addToWishlist, getWishListProduct } from "../services/product.api";
-import { setSellerProducts, setProducts, setLoading, setError } from "../state/product.slice";
+import { setSellerProducts, setProducts, setLoading,setSearchProducts, setError } from "../state/product.slice";
 
 export const useProducts = () => {
   const dispatch = useDispatch();
@@ -23,6 +23,7 @@ export const useProducts = () => {
       dispatch(setLoading(true));
       const result = await getProducts();
       dispatch(setProducts(result.products))
+      dispatch(setSearchProducts(result.products))
       return result.products
     } catch (error) {
       console.error(error)

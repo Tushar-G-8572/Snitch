@@ -10,18 +10,9 @@ const SearchBar = () => {
     const wrapRef = useRef(null);
     const navigate = useNavigate();
 
-    const products = useSelector(state => state.product.products || []);
+    const products = useSelector(state => state.product.searchProdcuts || []);
 
-    // Dummy/fallback data in case store is empty
-    const dummyProducts = [
-        { _id: '1', title: 'T Shirt', description: 'Over Sized', price: { amount: 599, currency: 'INR' }, images: [{ url: 'https://ik.imagekit.io/tusharG/Snitch/haryo-setyadi-acn5ERAeSb4-unsplash_DuHOwDK8FO.jpg' }] },
-        { _id: '2', title: 'Summer wear Sky Blue Shirt', description: '100% Cotton Shirt', price: { amount: 798.99, currency: 'INR' }, images: [] },
-        { _id: '3', title: 'Linen Pants', description: 'Office & Daily Wear', price: { amount: 1199, currency: 'INR' }, images: [{ url: 'https://ik.imagekit.io/tusharG/Snitch/Linen_pants_black-4_tQz9sGNB0.jpg' }] },
-        { _id: '4', title: 'Summer Wear T-Shirt', description: 'Relaxed fit cotton', price: { amount: 649, currency: 'INR' }, images: [] },
-        { _id: '5', title: 'Summer Wear Short Pants', description: 'Breathable summer shorts', price: { amount: 899, currency: 'INR' }, images: [] },
-    ];
-
-    const allProducts = products.length > 0 ? products : dummyProducts;
+    const allProducts = products.length > 0 ? products : [];
 
     // Filter products based on query
     useEffect(() => {

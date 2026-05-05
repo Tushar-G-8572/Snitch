@@ -6,7 +6,8 @@ const productSlice = createSlice({
   sellerProducts:[],
   products:[],
   loading:false,
-  error:null
+  error:null,
+  searchProdcuts:[]
  },
  reducers:{
   setSellerProducts:(state,actions)=>{
@@ -20,9 +21,12 @@ const productSlice = createSlice({
   },
   setError:(state,actions)=>{
    state.error = actions.payload
+  },
+  setSearchProducts:(state,actions)=>{
+    state.searchProdcuts = actions.payload
   }
  }
 })
 
-export const {setSellerProducts,setProducts,setError,setLoading} = productSlice.actions;
+export const {setSellerProducts,setProducts,setError,setSearchProducts,setLoading} = productSlice.actions;
 export default productSlice.reducer;
