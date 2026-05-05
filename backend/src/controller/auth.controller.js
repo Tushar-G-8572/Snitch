@@ -138,31 +138,6 @@ export async function get_MEController(req, res) {
     }
 }
 
-// export async function handleGooleSignupAndLogin(req, res) {
-//     try {
-//         const { sub, given_name, name, email } = req.user._json;
-//         const user = await userModel.findOne({ email });
-//         if (user) {
-//             const token = createToken(user._id, user.role);
-//             res.cookie('token', token);
-//             return res.redirect(config.BASE_URI);
-//         }
-//         const userName = given_name.split(' ').join('').toLocaleLowerCase() + sub.split('').reverse().join('').substring(0, 5);
-//         const newUser = await userModel.create({
-//             fullName: name,
-//             email: email,
-//             username: userName,
-//         })
-//         const token = createToken(newUser._id, newUser.role);
-//         res.cookie('token', token);
-//         return res.redirect(config.BASE_URI);
-
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ success: false, message: "Error while google authentication" })
-//     }
-// }
-
 export async function handleGoogleSignupAndLogin(req, res) {
     try {
         const { sub, given_name, name, email } = req.user._json;

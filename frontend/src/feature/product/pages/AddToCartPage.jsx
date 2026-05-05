@@ -345,6 +345,7 @@ const AddToCartPage = () => {
   const cartProducts = useSelector(state => state.cart.cartProducts);
   const loading = useSelector(state => state.cart.loading);
   const user = useSelector(state => state.auth.user)
+  console.log(user);
   const socketId = useSelector(state => state.cart.socketId)
   const discountCoupon = useSelector(state=> state.cart.discountCoupon)
   const errorMessage = useSelector(state => state.cart.error);
@@ -383,7 +384,7 @@ async function handleApplyDiscount() {
 
   async function handleCheckout() {
     const {order} = await handleCreateOrder();
-    // console.log(order)
+    console.log(order)
        const options = {
       key: "rzp_test_SjCBx5D5qOsvTH",
       amount: order.finalTotal || order.amount, 

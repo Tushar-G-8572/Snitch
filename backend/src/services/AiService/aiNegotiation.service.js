@@ -168,8 +168,7 @@ export async function negotiationChat(socketId, userMessage, onChunk, onEnd) {
   const offerMatch = fullText.match(/\[OFFER:(\d+)\]/);
   if (offerMatch) {
     const parsed = parseInt(offerMatch[1], 10);
-    // Clamp to floor (max 15% discount)
-    session.currentOffer = Math.max(parsed, Math.ceil(session.initialTotal * 0.85));
+    session.currentOffer = Math.max(parsed, Math.ceil(session.initialTotal * 0.25));
   }
 
   // Extract coupon code from response e.g. [COUPON:SNITCH15]

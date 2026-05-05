@@ -11,7 +11,6 @@ export async function handleCreateProduct(req, res) {
       return res.status(403).json({ success: false, message: "Unauthorised" })
     }
     const { title, description, priceAmount, priceCurrency,stock } = req.body
-    console.log(title, description, priceAmount, priceCurrency,stock)
     const images = await Promise.all(req.files.map(async (file) => {
       return await storeImage(file)
     }))
@@ -31,7 +30,7 @@ export async function handleCreateProduct(req, res) {
     return res.status(201).json({ success: true, message: "Product lists successfully", products: productData })
 
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ success: false, message: "Error while listing Product" })
   }
 
@@ -79,7 +78,7 @@ export async function handleGetRelatedProduct(req, res) {
     const productDetail = await productModel.findById(productId);
     return res.status(200).json({ success: true, message: "Product fetched", products: productDetail })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     return res.status(400).json({ success: false, message: "Error while getting Product" })
   }
 }
@@ -88,11 +87,6 @@ export async function handleEditProduct(req, res) {
   try {
     const { productId } = req.params;
     const sellerId = req.user.id;
-
-    // console.log("req.body:", req.body);
-    // console.log("req.files:", req.files);
-    // console.log("productId:", productId);
-
 
     const product = await productModel.findOne({ _id: productId, seller: sellerId });
 
@@ -238,8 +232,6 @@ export async function handleGetWishlistProducts(req,res) {
     const userId = req.user.id;
     
     const wishlistItems = await wishListModel.find({user:userId}).populate("product")
-    // console.log("wishlistItems",wishlistItems);
-    
 
     return res.status(200).json({success:true,message:"Wishlist fetched",wishList:wishlistItems})
     

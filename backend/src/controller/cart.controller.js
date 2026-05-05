@@ -131,7 +131,6 @@ export async function removeAddToCartProduct(req,res) {
     const userId = req.user.id
     
   if(!itemId) return res.status(400).json({success:false,message:"Item Id requires"});
-  console.log(itemId);
 
   const cart = await cartModel.findOne({user:userId})
 
@@ -142,7 +141,7 @@ export async function removeAddToCartProduct(req,res) {
   res.status(200).json({success:true,message:"Cart item removed",cart})
   
 }catch(error){
-  console.log(error);
+  console.error(error);
   return res.status(400).json({success:false,message:"Error while removing item"})
 }
 
@@ -157,8 +156,6 @@ export async function updateCartProductQuantity(req,res) {
     const userId = req.user.id;
     const {quantity}  = req.body;
 
-    console.log(itemId,userId,quantity)
-    
     const cart = await cartModel.findOne({user:userId});
 
     if(!cart){
@@ -167,7 +164,6 @@ export async function updateCartProductQuantity(req,res) {
 
   cart.items = cart.items.map((item)=>{
       if(item._id.toString() === itemId){
-        console.log("In If",item.quantity);
         item.quantity = quantity
       }
       return item
@@ -188,7 +184,6 @@ export async function createOrderController(req,res) {
     if(!cart){
         return res.status(404).json({success:false,message:"Cart is empty"})
     }   
-    // console.log(cart);
     let amoutPay = Math.ceil(cart.finalTotal) ||cart.total
     const order = await createOrder({amount:amoutPay, currency:cart.items[0].price.currency});
 
@@ -215,11 +210,14 @@ export async function createOrderController(req,res) {
         }))
     })
 
-    const aiPaymentId = await aiNegotiationModel.findOne({user:req.user?.id,cart:cart._id})
 
+    const aiPaymentId = await aiNegotiationModel.findOne({user:req.user?.id,cart:cart._id}) 
+    || await aiNegotiationModel.create({user:req.user?.id,cart:cart._id})
+    
     aiPaymentId.paymentId = payment._id;
 
     await aiPaymentId.save();
+
 
     return res.status(200).json({success:true,order})
 }
@@ -229,7 +227,6 @@ export async function verifyPaymentOrder(req,res) {
         razorpay_payment_id,
         razorpay_signature
     } = req.body;
-console.log(razorpay_order_id,razorpay_payment_id,razorpay_signature);
     const payment = await paymentModel.findOne({
         "razorPay.orderId":razorpay_order_id,
         status:'pending'
@@ -266,11 +263,11 @@ console.log(razorpay_order_id,razorpay_payment_id,razorpay_signature);
 export async function handleGetOrders(req,res) {
     try{
         const userId = req.user.id;
-        const ordersStatus = await paymentModel.find({user:userId});
-        console.log(ordersStatus[0].status);
-        if(ordersStatus[0].status === 'paid'){
-            const orders = await getCartDetail(userId); 
+        const orders = await paymentModel.findOne({user:userId});
+        if(orders.status === 'paid'){
             return res.status(200).json({success:true,orders})
+        }else{
+            return res.status(200).json({success:true,message:"No orders now"})
         }
     }catch(error){
         console.error(error);
@@ -283,9 +280,6 @@ export async function handleDiscountCoupon(req, res) {
     const userId = req.user.id;
     // const {cartId} = req.params;
     const { socketId, discountCoupon } = req.body;
-    // console.log(typeof(socketId))
-    console.log(socketId,discountCoupon)
-    // 1. Validate inputs early
     if (!socketId || !discountCoupon) {
       return res.status(400).json({ success: false, message: "socketId and discountCoupon are required" });
     }
@@ -304,7 +298,6 @@ export async function handleDiscountCoupon(req, res) {
     // 2. Fetch the session from Redis
     const raw = await redis.get(socketId.toString());
     const validCoupon = JSON.parse(raw);
-    console.log(validCoupon)
     if (!raw) {
       cart.aiDiscount = null;  
       await cart.save();
