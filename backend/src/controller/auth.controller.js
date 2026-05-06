@@ -246,3 +246,29 @@ export async function handleLogoutController(req, res) {
         return res.status(500).json({ success: false, message: "Error while logout user" });
     }
 }
+
+export async function handleUpdateUser(req,res) {
+    try{
+
+        const userId = req.user.id;
+        const {fullName,username,role} = req.body;
+
+        console.log(userId);
+        console.log(fullName,username,role)
+
+        const user = await userModel.findOneAndUpdate({_id:userId},{
+            fullName,
+            username,
+            role
+        });
+
+        await redis.del(userId.toString());
+
+        return res.status(200).json({success:true,message:"user updated"})
+        
+
+    }catch(error){
+        console.error(error);
+        return res.status(500).json({success:false,message:"error while updating user"});
+    }
+}

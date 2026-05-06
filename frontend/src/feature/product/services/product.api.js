@@ -54,3 +54,8 @@ export async function getWishListProduct() {
     const response = await api.get('/wishlist');
     return response.data;
 }
+
+export async function deleteProduct(productId) {
+    const response  = await api.delete(`/delete/${productId}`);
+    return response.data
+}

@@ -10,10 +10,7 @@ const fmt = (amount, currency = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 
 function getProductImage(product) {
-  if (Array.isArray(product?.images) && product.images[0]?.url)
-    return product.images[0].url;
-  if (product?.images?.url) return product.images.url;
-  return 'https://placehold.co/400x500?text=No+Image';
+    return product.images[0]?.url || 'https://placehold.co/400x500?text=No+Image' ;
 }
 
 /* ── Skeleton ── */
@@ -131,17 +128,6 @@ function WishlistCard({ item, onAddToCart }) {
           <span className="text-lg font-black text-gray-900 tracking-tight">
             {fmt(price, currency)}
           </span>
-          <button
-            disabled={!inStock}
-            onClick={() => onAddToCart(product._id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold tracking-wide border-none transition-all cursor-pointer
-              ${inStock
-                ? 'bg-gray-900 text-white hover:bg-gray-700 active:scale-95'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
-          >
-            🛒 Add to Cart
-          </button>
         </div>
       </div>
     </div>
@@ -163,7 +149,7 @@ const WishListPage = () => {
 
   async function onAddToCart(productId) {
     await handleAddToCart({ productId, quantity: 1 });
-    navigate('/cart');
+    navigate('/cart-items');
   }
 
   if (loading && wishlist.length === 0) return <WishlistSkeleton />;
@@ -173,21 +159,9 @@ const WishListPage = () => {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <Navbar />
 
-      {/* Breadcrumb */}
-      <nav className="bg-white border-b border-gray-100 px-10 py-4">
-        <div className="flex items-center gap-2 text-xs text-gray-400">
-          <span className="cursor-pointer hover:text-gray-700 transition-colors" onClick={() => navigate('/')}>
-            Home
-          </span>
-          <span>/</span>
-          <span className="text-gray-900 font-semibold">Wishlist</span>
-        </div>
-      </nav>
-
-      <div className="max-w-6xl mx-auto px-5 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black tracking-tight mb-1">My Wishlist</h1>
+      <div className="max-w-6xl mx-auto px-4 sm:px-5 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1">My Wishlist</h1>
           <p className="text-gray-400 text-sm">
             {wishlist.length} saved item{wishlist.length !== 1 ? 's' : ''}
           </p>
@@ -195,14 +169,13 @@ const WishListPage = () => {
 
         {/* Grid */}
         <div
-          className="grid gap-6"
-          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
+          className="grid gap-4 sm:gap-6"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}
         >
           {wishlist.map(item => (
             <WishlistCard
               key={item._id}
               item={item}
-              onAddToCart={onAddToCart}
             />
           ))}
         </div>

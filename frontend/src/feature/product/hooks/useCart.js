@@ -66,7 +66,8 @@ export const useCart = () => {
 
     async function handleGetOrders() {
         const result = await getOrdersDetails();
-        dispatch(setCartProducts(result.orders.orderItems));
+        console.log(result)
+        dispatch(setCartProducts(result.orders));
         return result.success
     }
 

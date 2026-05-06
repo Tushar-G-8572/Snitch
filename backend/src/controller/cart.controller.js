@@ -14,7 +14,7 @@ import aiNegotiationModel from "../models/aiNegotiation.model.js";
 export async function addToCart(req, res) {
     const userId = req.user?.id;
     const { productId } = req.params;
-    const { variantId, quantity,imageUrl } = req.body;
+    const { variantId, quantity, imageUrl } = req.body;
 
     let product;
     let imageId;
@@ -106,221 +106,223 @@ export async function addToCart(req, res) {
     });
 }
 
-export async function getAddToCartProduct(req,res) {
-    try{
+export async function getAddToCartProduct(req, res) {
+    try {
 
-        const userId = req.user?.id        
+        const userId = req.user?.id
         const products = await getCartDetail(userId);
 
-    if(!products){
-        return res.status(200).json({success:true,message:"Your cart is empty"})
+        if (!products) {
+            return res.status(200).json({ success: true, message: "Your cart is empty" })
+        }
+
+        return res.status(200).json({ success: true, message: "cart Items fetched", cartData: products })
+    } catch (error) {
+        console.error(error);
+        return res.status(400).json({ success: false, message: "error while getting cart elements" })
     }
 
-    return res.status(200).json({success:true,message:"cart Items fetched",cartData:products})
-}catch(error){
-    console.error(error);
-    return res.status(400).json({success:false,message:"error while getting cart elements"})
-}
-    
 }
 
-export async function removeAddToCartProduct(req,res) {
-  try{
+export async function removeAddToCartProduct(req, res) {
+    try {
 
-    const {itemId} = req.params;
-    const userId = req.user.id
-    
-  if(!itemId) return res.status(400).json({success:false,message:"Item Id requires"});
+        const { itemId } = req.params;
+        const userId = req.user.id
 
-  const cart = await cartModel.findOne({user:userId})
+        if (!itemId) return res.status(400).json({ success: false, message: "Item Id requires" });
 
-  const safeItems = cart.items.filter(item => item._id.toString() !== itemId);
-  cart.items = safeItems;
-  await cart.save();
+        const cart = await cartModel.findOne({ user: userId })
 
-  res.status(200).json({success:true,message:"Cart item removed",cart})
-  
-}catch(error){
-  console.error(error);
-  return res.status(400).json({success:false,message:"Error while removing item"})
-}
+        const safeItems = cart.items.filter(item => item._id.toString() !== itemId);
+        cart.items = safeItems;
+        await cart.save();
+
+        res.status(200).json({ success: true, message: "Cart item removed", cart })
+
+    } catch (error) {
+        console.error(error);
+        return res.status(400).json({ success: false, message: "Error while removing item" })
+    }
 
 
 
 }
 
-export async function updateCartProductQuantity(req,res) {
-  try{
+export async function updateCartProductQuantity(req, res) {
+    try {
 
-    const {itemId} = req.params;
-    const userId = req.user.id;
-    const {quantity}  = req.body;
+        const { itemId } = req.params;
+        const userId = req.user.id;
+        const { quantity } = req.body;
 
-    const cart = await cartModel.findOne({user:userId});
+        const cart = await cartModel.findOne({ user: userId });
 
-    if(!cart){
-    return res.status(404).json({success:false,message:"No product in Cart"})
-  }
+        if (!cart) {
+            return res.status(404).json({ success: false, message: "No product in Cart" })
+        }
 
-  cart.items = cart.items.map((item)=>{
-      if(item._id.toString() === itemId){
-        item.quantity = quantity
-      }
-      return item
-    })
+        cart.items = cart.items.map((item) => {
+            if (item._id.toString() === itemId) {
+                item.quantity = quantity
+            }
+            return item
+        })
 
-    await cart.save();
+        await cart.save();
 
-    return res.status(200).json({success:true,message:"Cart updated",cartData: cart.items})
-}catch(error){
-  console.error(error);
-  return res.status(400).json({success:false,message:"Error while updating cartProducts"});
+        return res.status(200).json({ success: true, message: "Cart updated", cartData: cart.items })
+    } catch (error) {
+        console.error(error);
+        return res.status(400).json({ success: false, message: "Error while updating cartProducts" });
+    }
+
 }
 
-}
-
-export async function createOrderController(req,res) {
+export async function createOrderController(req, res) {
     const cart = await getCartDetail(req.user.id);
-    if(!cart){
-        return res.status(404).json({success:false,message:"Cart is empty"})
-    }   
-    let amoutPay = Math.ceil(cart.finalTotal) ||cart.total
-    const order = await createOrder({amount:amoutPay, currency:cart.items[0].price.currency});
+    if (!cart) {
+        return res.status(404).json({ success: false, message: "Cart is empty" })
+    }
+    let amoutPay = Math.ceil(cart.finalTotal) || cart.total
+    const order = await createOrder({ amount: amoutPay, currency: cart.items[0].price.currency });
 
     const payment = await paymentModel.create({
-        user:req.user?.id,
-        razorPay:{
-            orderId:order.id
+        user: req.user?.id,
+        razorPay: {
+            orderId: order.id
         },
-        price:{
-            amount:cart.total,
-            currency:cart.items[0].price.currency
+        price: {
+            amount: cart.total,
+            currency: cart.items[0].price.currency
         },
-        orderItems:cart.items.map(item => ({
-            title:item.product.title,
-            productId:item.product._id,
-            varientId:item.varient,
-            quantity:item.quantity,
-            description:item.product.description,
-            price:{
-              amount:item.product.price.amount || item.product.varients.price.amount,
-              currency:item.product.price.currency || item.product.varients.price.currency
+        orderItems: cart.items.map(item => ({
+            title: item.product.title,
+            productId: item.product._id,
+            varientId: item.varient,
+            quantity: item.quantity,
+            description: item.product.description,
+            price: {
+                amount: item.product.price.amount || item.product.varients.price.amount,
+                currency: item.product.price.currency || item.product.varients.price.currency
             },
             images: item.product.images || item.product.varients.images
         }))
     })
 
 
-    const aiPaymentId = await aiNegotiationModel.findOne({user:req.user?.id,cart:cart._id}) 
-    || await aiNegotiationModel.create({user:req.user?.id,cart:cart._id})
-    
+    const aiPaymentId = await aiNegotiationModel.findOne({ user: req.user?.id, cart: cart._id })
+        || await aiNegotiationModel.create({ user: req.user?.id, cart: cart._id })
+
     aiPaymentId.paymentId = payment._id;
 
     await aiPaymentId.save();
 
 
-    return res.status(200).json({success:true,order})
+    return res.status(200).json({ success: true, order })
 }
 
-export async function verifyPaymentOrder(req,res) {
-    const {razorpay_order_id,
+export async function verifyPaymentOrder(req, res) {
+    const { razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature
     } = req.body;
     const payment = await paymentModel.findOne({
-        "razorPay.orderId":razorpay_order_id,
-        status:'pending'
+        "razorPay.orderId": razorpay_order_id,
+        status: 'pending'
     })
 
-    if(!payment){
-        return res.status(404).json({success:false,message:"No payment found"})
+    if (!payment) {
+        return res.status(404).json({ success: false, message: "No payment found" })
     }
 
     const isPaymentValid = await validatePaymentVerification({
-        order_id:razorpay_order_id,
-        payment_id:razorpay_payment_id
-    },razorpay_signature,config.RAZORPAY_KEY_SECRET)
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id
+    }, razorpay_signature, config.RAZORPAY_KEY_SECRET)
 
-    if(!isPaymentValid){
+    if (!isPaymentValid) {
         payment.status = 'failed'
         await payment.save();
-        return  res.status(400).json({success:false, message:"Payment Varification failed"})
+        return res.status(400).json({ success: false, message: "Payment Varification failed" })
     }
 
     payment.status = 'paid'
-    payment.razorPay.paymentId=razorpay_payment_id;
+    payment.razorPay.paymentId = razorpay_payment_id;
     payment.razorPay.signature = razorpay_signature;
 
     await payment.save();
 
-    await cartModel.findOneAndDelete({user:req.user.id});
+    await cartModel.findOneAndDelete({ user: req.user.id });
 
-    return res.status(200).json({success:true,message:"payment done"})
+    return res.status(200).json({ success: true, message: "payment done" })
 
 
 }
 
-export async function handleGetOrders(req,res) {
-    try{
+export async function handleGetOrders(req, res) {
+    try {
         const userId = req.user.id;
-        const orders = await paymentModel.findOne({user:userId});
-        if(orders.status === 'paid'){
-            return res.status(200).json({success:true,orders})
-        }else{
-            return res.status(200).json({success:true,message:"No orders now"})
+
+        const orders = await paymentModel.find({ user: userId, status: "paid" }).lean();
+
+        if (orders.length > 0) {
+            return res.status(200).json({ success: true, orders });
         }
-    }catch(error){
+
+        return res.status(200).json({ success: true, message: "No orders now", orders:[] });
+    } catch (error) {
         console.error(error);
-        return res.status(400).json({success:false,message:"Error while fetching orders"})
+        return res.status(400).json({ success: false, message: "Error while fetching orders" })
     }
 }
 
 export async function handleDiscountCoupon(req, res) {
-  try {
-    const userId = req.user.id;
-    // const {cartId} = req.params;
-    const { socketId, discountCoupon } = req.body;
-    if (!socketId || !discountCoupon) {
-      return res.status(400).json({ success: false, message: "socketId and discountCoupon are required" });
+    try {
+        const userId = req.user.id;
+        // const {cartId} = req.params;
+        const { socketId, discountCoupon } = req.body;
+        if (!socketId || !discountCoupon) {
+            return res.status(400).json({ success: false, message: "socketId and discountCoupon are required" });
+        }
+
+        const cart = await cartModel.findOne({ user: userId });
+        if (!cart) {
+            return res.status(404).json({ success: false, message: "Cart not found" });
+        }
+
+        const aiRoundsCompleted = await aiNegotiationModel.findOne({ $and: [{ user: userId }, { cart: cart._id }] });
+        if (aiRoundsCompleted) {
+            return res.status(400).json({ success: false, message: "You have already used the negotiation" })
+        }
+
+
+        // 2. Fetch the session from Redis
+        const raw = await redis.get(socketId.toString());
+        const validCoupon = JSON.parse(raw);
+        if (!raw) {
+            cart.aiDiscount = null;
+            await cart.save();
+            return res.status(400).json({ success: false, message: "Coupon code expired please refresh the page " });
+        }
+
+
+        // 3. Actually compare — this was the missing step
+        if (!validCoupon || validCoupon !== discountCoupon) {
+            return res.status(400).json({ success: false, message: "Invalid coupon code" });
+        }
+
+        cart.aiDiscount = discountCoupon;
+        await cart.save();
+
+        const getDiscountedPrice = await getCartDetail(userId);
+
+        await aiNegotiationModel.create({ user: userId, cart: cart._id, totalAmount: cart.total, aiDiscountCoupon: cart.aiDiscount })
+
+        return res.status(200).json({ success: true, message: "Coupon applied successfully", cartDiscountedPrice: getDiscountedPrice });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Something went wrong" });
     }
-
-    const cart = await cartModel.findOne({user:userId});
-    if (!cart) {
-      return res.status(404).json({ success: false, message: "Cart not found" });
-    }
-
-    const aiRoundsCompleted = await aiNegotiationModel.findOne({$and:[{user:userId},{cart:cart._id}]});
-    if(aiRoundsCompleted){
-        return res.status(400).json({success:false,message:"You have already used the negotiation"})
-    }
-
-
-    // 2. Fetch the session from Redis
-    const raw = await redis.get(socketId.toString());
-    const validCoupon = JSON.parse(raw);
-    if (!raw) {
-      cart.aiDiscount = null;  
-      await cart.save();
-      return res.status(400).json({ success: false, message: "Coupon code expired please refresh the page "});
-    }
-
-
-    // 3. Actually compare — this was the missing step
-    if (!validCoupon || validCoupon !== discountCoupon) {
-      return res.status(400).json({ success: false, message: "Invalid coupon code" });
-    }
-
-    cart.aiDiscount = discountCoupon;
-    await cart.save();
-
-    const getDiscountedPrice = await getCartDetail(userId);
-
-    await aiNegotiationModel.create({user:userId,cart:cart._id,totalAmount:cart.total,aiDiscountCoupon:cart.aiDiscount})
-
-    return res.status(200).json({ success: true, message: "Coupon applied successfully" ,cartDiscountedPrice:getDiscountedPrice });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: "Something went wrong" });
-  }
 }

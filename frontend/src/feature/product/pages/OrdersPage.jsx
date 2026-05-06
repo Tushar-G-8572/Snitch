@@ -22,9 +22,6 @@ const OrdersPage = () => {
         handleGetOrders();
     }, []);
 
-
-    console.log(orders);
-
     if (!user) {
         return (
             <div style={{ backgroundColor: '#fbf9f6', minHeight: '100vh' }}>
@@ -50,22 +47,22 @@ const OrdersPage = () => {
             <div style={{ backgroundColor: '#fbf9f6', minHeight: '100vh', fontFamily: "'DM Sans', sans-serif" }}>
                 <Navbar />
 
-                <div className="max-w-4xl mx-auto px-6 lg:px-16 py-16">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-16 py-10 sm:py-16">
 
                     {/* ── Header ── */}
-                    <div className="flex items-end justify-between mb-10">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10">
                         <div>
                             <span className="block text-[10px] uppercase tracking-[0.28em] font-medium mb-2"
                                 style={{ color: '#C9A96E' }}>
                                 Account
                             </span>
-                            <h1 className="text-4xl font-light"
+                            <h1 className="text-3xl sm:text-4xl font-light"
                                 style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}>
                                 My Orders
                             </h1>
                         </div>
                         <button onClick={() => navigate('/profile')}
-                            className="flex items-center gap-2 text-[10px] font-medium tracking-[0.15em] uppercase transition-colors hover:text-[#C9A96E]"
+                            className="flex items-center gap-2 text-[10px] font-medium tracking-[0.15em] uppercase transition-colors hover:text-[#C9A96E] self-start sm:self-auto"
                             style={{ color: '#7A6E63', background: 'none', border: 'none', cursor: 'pointer' }}>
                             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                                 <polyline points="15 18 9 12 15 6" />
@@ -80,88 +77,104 @@ const OrdersPage = () => {
                         </p>
                     )}
 
-                    {/* ── Orders List ── */}
-                    {/* ── Orders List ── */}
                     {orders.length > 0 ? (
                         <div className="flex flex-col gap-6">
-                            {orders.map(item => {
-                                const img = item.images?.[0]?.url ?? null;
+                            {orders.map(order => (
+                                <div key={order._id} className="border overflow-hidden"
+                                    style={{ borderColor: '#e4e2df', backgroundColor: '#fff' }}>
 
-                                return (
-                                    <div key={item._id} className="border overflow-hidden"
-                                        style={{ borderColor: '#e4e2df', backgroundColor: '#fff' }}>
-
-                                        {/* ── Item Header ── */}
-                                        <div className="flex items-center justify-between flex-wrap gap-3 px-6 py-4 border-b"
-                                            style={{ borderColor: '#f0ede9', backgroundColor: '#fbf9f6' }}>
+                                    {/* ── Order Header ── */}
+                                    <div className="flex items-center justify-between flex-wrap gap-3 px-6 py-4 border-b"
+                                        style={{ borderColor: '#f0ede9', backgroundColor: '#fbf9f6' }}>
+                                        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '13px', color: '#7A6E63', letterSpacing: '0.05em' }}>
+                                            Order #{order._id}
+                                        </p>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[9px] font-semibold tracking-[0.18em] uppercase px-2 py-1"
+                                                style={{ backgroundColor: '#f0faf4', color: '#2d7d52' }}>
+                                                {order.status}
+                                            </span>
                                             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '17px', color: '#1b1c1a' }}>
-                                                Order #{item._id}
-                                            </p>
-                                            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '17px', color: '#1b1c1a' }}>
-                                                {item.price?.currency} {(item.price?.amount * item.quantity).toLocaleString('en-IN')}
+                                                <span style={{ fontSize: '12px', color: '#7A6E63', marginRight: '3px' }}>{order.price?.currency}</span>
+                                                {order.price?.amount?.toLocaleString('en-IN')}
                                             </p>
                                         </div>
-
-                                        {/* ── Item Row ── */}
-                                        <div className="px-6 py-4 flex items-center gap-4">
-                                            {img ? (
-                                                <img src={img} alt={item.title}
-                                                    className="object-cover flex-shrink-0"
-                                                    style={{ width: '56px', height: '56px' }} />
-                                            ) : (
-                                                <div className="flex items-center justify-center flex-shrink-0"
-                                                    style={{ width: '56px', height: '56px', backgroundColor: '#f5f3f0' }}>
-                                                    <svg width="20" height="20" fill="none" stroke="#C9A96E" strokeWidth="1.5" viewBox="0 0 24 24">
-                                                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                                                        <line x1="3" y1="6" x2="21" y2="6" />
-                                                        <path d="M16 10a4 4 0 01-8 0" />
-                                                    </svg>
-                                                </div>
-                                            )}
-
-                                            <div className="flex-1 min-w-0">
-                                                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '16px', color: '#1b1c1a' }}>
-                                                    {item.title}
-                                                </p>
-                                                <p style={{ fontSize: '10px', color: '#7A6E63', marginTop: '1px', letterSpacing: '0.06em' }}>
-                                                    Qty {item.quantity} · {item.price?.currency} {item.price?.amount?.toLocaleString('en-IN')}
-                                                </p>
-                                            </div>
-
-                                            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '15px', color: '#1b1c1a', flexShrink: 0 }}>
-                                                {item.price?.currency} {(item.price?.amount * item.quantity).toLocaleString('en-IN')}
-                                            </p>
-                                        </div>
-
                                     </div>
-                                );
-                            })}
+
+                                    {order.orderItems.map((item, idx) => {
+                                        const img = item.images?.[0]?.url ?? null;
+                                        const lineTotal = (item.price?.amount * item.quantity).toLocaleString('en-IN');
+
+                                        return (
+                                            <div key={item._id ?? idx}
+                                                className="flex items-center gap-4 px-6 py-4 border-b last:border-b-0"
+                                                style={{ borderColor: '#f5f3f0' }}>
+
+                                                {/* Image */}
+                                                {img ? (
+                                                    <img src={img} alt={item.title}
+                                                        className="object-cover flex-shrink-0 rounded"
+                                                        style={{ width: '56px', height: '56px' }} />
+                                                ) : (
+                                                    <div className="flex items-center justify-center flex-shrink-0"
+                                                        style={{ width: '56px', height: '56px', backgroundColor: '#f5f3f0' }}>
+                                                        <svg width="20" height="20" fill="none" stroke="#C9A96E" strokeWidth="1.5" viewBox="0 0 24 24">
+                                                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                                                            <line x1="3" y1="6" x2="21" y2="6" />
+                                                            <path d="M16 10a4 4 0 01-8 0" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+
+                                                {/* Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="truncate"
+                                                        style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '16px', color: '#1b1c1a' }}>
+                                                        {item.title}
+                                                    </p>
+                                                    <p style={{ fontSize: '10px', color: '#7A6E63', marginTop: '4px', letterSpacing: '0.06em' }}>
+                                                        Qty {item.quantity} &nbsp;·&nbsp; {item.price?.currency} {item.price?.amount?.toLocaleString('en-IN')} each
+                                                    </p>
+                                                </div>
+
+                                                {/* Line total */}
+                                                <div className="text-right flex-shrink-0">
+                                                    <p style={{ fontSize: '10px', color: '#7A6E63', marginBottom: '2px', letterSpacing: '0.06em' }}>Total</p>
+                                                    <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '16px', color: '#1b1c1a' }}>
+                                                        {item.price?.currency} {lineTotal}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
                         </div>
-                    )  : (
-                    /* ── Empty State ── */
-                    <div className="py-32 text-center flex flex-col items-center">
-                        <div className="w-16 h-16 flex items-center justify-center mb-6"
-                            style={{ backgroundColor: '#f5f3f0' }}>
-                            <svg width="28" height="28" fill="none" stroke="#C9A96E" strokeWidth="1.2" viewBox="0 0 24 24">
-                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-                                <rect x="9" y="3" width="6" height="4" rx="1" />
-                                <line x1="9" y1="12" x2="15" y2="12" />
-                                <line x1="9" y1="16" x2="13" y2="16" />
-                            </svg>
+                    ) : (
+                        /* ── Empty State ── */
+                        <div className="py-32 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 flex items-center justify-center mb-6"
+                                style={{ backgroundColor: '#f5f3f0' }}>
+                                <svg width="28" height="28" fill="none" stroke="#C9A96E" strokeWidth="1.2" viewBox="0 0 24 24">
+                                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                                    <line x1="9" y1="12" x2="15" y2="12" />
+                                    <line x1="9" y1="16" x2="13" y2="16" />
+                                </svg>
+                            </div>
+                            <h2 className="text-2xl font-light mb-3"
+                                style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}>
+                                No orders yet
+                            </h2>
+                            <p className="text-sm leading-relaxed mb-8 max-w-xs" style={{ color: '#7A6E63' }}>
+                                Looks like you haven't placed any orders. Start exploring our collection.
+                            </p>
+                            <button onClick={() => navigate('/')}
+                                className="text-[10px] font-medium tracking-[0.2em] uppercase px-8 py-3 transition-opacity hover:opacity-80"
+                                style={{ backgroundColor: '#1b1c1a', color: '#C9A96E', border: 'none', cursor: 'pointer' }}>
+                                Shop Now
+                            </button>
                         </div>
-                        <h2 className="text-2xl font-light mb-3"
-                            style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}>
-                            No orders yet
-                        </h2>
-                        <p className="text-sm leading-relaxed mb-8 max-w-xs" style={{ color: '#7A6E63' }}>
-                            Looks like you haven't placed any orders. Start exploring our collection.
-                        </p>
-                        <button onClick={() => navigate('/')}
-                            className="text-[10px] font-medium tracking-[0.2em] uppercase px-8 py-3 transition-opacity hover:opacity-80"
-                            style={{ backgroundColor: '#1b1c1a', color: '#C9A96E', border: 'none', cursor: 'pointer' }}>
-                            Shop Now
-                        </button>
-                    </div>
                     )}
                 </div>
 

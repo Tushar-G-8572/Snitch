@@ -6,11 +6,13 @@ import SearchBar from './SearchBar';
 
 const Navbar = () => {
     const user = useSelector(state => state.auth.user);
-    const cartItems = useSelector(state => state.cart?.item || []);
+    const cartItems = useSelector(state => state.cart.cartProducts || []);
     const navigate = useNavigate();
     const [profileOpen, setProfileOpen] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const profileRef = useRef(null);
-    const { handleLogout } = useAuth()
+    const { handleLogout } = useAuth();
+
     // Close profile dropdown on outside click
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -22,13 +24,31 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Lock body scroll when mobile menu is open
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [mobileMenuOpen]);
+
     const handleLogoutSubmit = async () => {
         await handleLogout();
         setProfileOpen(false);
+        setMobileMenuOpen(false);
         navigate('/login');
     };
 
-    const cartCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    const cartCount = cartItems.items?.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+    const navLinks = [
+        { label: 'Collection', to: '/' },
+        { label: 'Men', to: '/' },
+        { label: 'Women', to: '/' },
+        { label: 'New Arrivals', to: '/' },
+    ];
 
     return (
         <>
@@ -41,31 +61,56 @@ const Navbar = () => {
             <nav
                 className="sticky top-0 z-50 border-b"
                 style={{
-                    backgroundColor: 'rgba(251,249,246,0.92)',
+                    backgroundColor: 'rgba(251,249,246,0.95)',
                     backdropFilter: 'blur(12px)',
                     borderColor: '#e4e2df',
                     fontFamily: "'DM Sans', sans-serif",
                 }}
             >
-                <div className="max-w-7xl mx-auto px-6 lg:px-16 xl:px-24 h-16 flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 xl:px-24 h-14 sm:h-16 flex items-center justify-between">
+
+                    {/* ── Hamburger (Mobile only) ── */}
+                    <button
+                        className="md:hidden p-2 -ml-1 flex flex-col gap-1.5 transition-opacity hover:opacity-70"
+                        onClick={() => setMobileMenuOpen(prev => !prev)}
+                        aria-label="Toggle menu"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                        <span
+                            className="block h-px w-5 transition-all duration-300 origin-center"
+                            style={{
+                                backgroundColor: '#1b1c1a',
+                                transform: mobileMenuOpen ? 'rotate(45deg) translate(3.5px, 3.5px)' : 'none',
+                            }}
+                        />
+                        <span
+                            className="block h-px w-5 transition-all duration-300"
+                            style={{
+                                backgroundColor: '#1b1c1a',
+                                opacity: mobileMenuOpen ? 0 : 1,
+                            }}
+                        />
+                        <span
+                            className="block h-px w-5 transition-all duration-300 origin-center"
+                            style={{
+                                backgroundColor: '#1b1c1a',
+                                transform: mobileMenuOpen ? 'rotate(-45deg) translate(3.5px, -3.5px)' : 'none',
+                            }}
+                        />
+                    </button>
 
                     {/* ── Logo ── */}
                     <Link
                         to="/"
-                        className="text-lg font-medium tracking-[0.3em] uppercase transition-opacity hover:opacity-75"
+                        className="text-base sm:text-lg font-medium tracking-[0.3em] uppercase transition-opacity hover:opacity-75"
                         style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E' }}
                     >
                         Snitch.
                     </Link>
 
-                    {/* ── Center Nav Links ── */}
-                    <div className="hidden md:flex items-center gap-8">
-                        {[
-                            { label: 'Collection', to: '/' },
-                            { label: 'Men', to: '/' },
-                            { label: 'Women', to: '/' },
-                            { label: 'New Arrivals', to: '/' },
-                        ].map(({ label, to }) => (
+                    {/* ── Center Nav Links (Desktop) ── */}
+                    <div className="hidden md:flex items-center gap-6 lg:gap-8">
+                        {navLinks.map(({ label, to }) => (
                             <Link
                                 key={label}
                                 to={to}
@@ -79,8 +124,6 @@ const Navbar = () => {
                                 />
                             </Link>
                         ))}
-
-                        {/* Orders — only for logged-in users */}
                         {user && (
                             <Link
                                 to="/orders"
@@ -108,7 +151,7 @@ const Navbar = () => {
                     </div>
 
                     {/* ── Right Actions ── */}
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 sm:gap-1">
 
                         {/* Search */}
                         <SearchBar />
@@ -185,8 +228,8 @@ const Navbar = () => {
                                             >
                                                 {user.fullName?.charAt(0).toUpperCase()}
                                             </div>
-                                            <div>
-                                                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '15px', color: '#1b1c1a' }}>
+                                            <div className="min-w-0">
+                                                <p className="truncate" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '15px', color: '#1b1c1a' }}>
                                                     {user.fullName}
                                                 </p>
                                                 <p style={{ fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#C9A96E' }}>
@@ -234,7 +277,7 @@ const Navbar = () => {
                                 )}
                             </div>
                         ) : (
-                            <div className="flex items-center gap-4 ml-5">
+                            <div className="flex items-center gap-3 ml-2 sm:ml-5">
                                 <Link
                                     to="/login"
                                     className="text-[10px] font-medium tracking-[0.2em] uppercase transition-colors hover:text-[#C9A96E]"
@@ -247,6 +290,139 @@ const Navbar = () => {
                     </div>
                 </div>
             </nav>
+
+            {/* ── Mobile Menu Overlay ── */}
+            {mobileMenuOpen && (
+                <div
+                    className="fixed inset-0 z-40 md:hidden"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
+
+            {/* ── Mobile Drawer ── */}
+            <div
+                className="fixed top-0 left-0 h-full z-50 md:hidden flex flex-col overflow-y-auto transition-transform duration-300 ease-in-out"
+                style={{
+                    width: '280px',
+                    backgroundColor: '#fbf9f6',
+                    borderRight: '1px solid #e4e2df',
+                    transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+                    fontFamily: "'DM Sans', sans-serif",
+                }}
+            >
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#e4e2df' }}>
+                    <Link
+                        to="/"
+                        onClick={() => setMobileMenuOpen(false)}
+                        style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E', fontSize: '18px', letterSpacing: '0.3em', textTransform: 'uppercase' }}
+                    >
+                        Snitch.
+                    </Link>
+                    <button
+                        onClick={() => setMobileMenuOpen(false)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7A6E63' }}
+                        aria-label="Close menu"
+                    >
+                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Drawer Nav Links */}
+                <div className="flex flex-col py-4">
+                    {navLinks.map(({ label, to }) => (
+                        <Link
+                            key={label}
+                            to={to}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="px-6 py-3.5 text-[11px] font-medium tracking-[0.22em] uppercase transition-colors hover:text-[#C9A96E] hover:bg-[#f5f3f0]"
+                            style={{ color: '#7A6E63' }}
+                        >
+                            {label}
+                        </Link>
+                    ))}
+                    {user && (
+                        <Link
+                            to="/orders"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="px-6 py-3.5 text-[11px] font-medium tracking-[0.22em] uppercase transition-colors hover:text-[#C9A96E] hover:bg-[#f5f3f0]"
+                            style={{ color: '#7A6E63' }}
+                        >
+                            Orders
+                        </Link>
+                    )}
+                    <Link
+                        to="/wishlist"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="px-6 py-3.5 text-[11px] font-medium tracking-[0.22em] uppercase transition-colors hover:text-[#C9A96E] hover:bg-[#f5f3f0]"
+                        style={{ color: '#7A6E63' }}
+                    >
+                        Wishlist
+                    </Link>
+                    <Link
+                        to="/cart-items"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="px-6 py-3.5 text-[11px] font-medium tracking-[0.22em] uppercase transition-colors hover:text-[#C9A96E] hover:bg-[#f5f3f0] flex items-center gap-2"
+                        style={{ color: '#7A6E63' }}
+                    >
+                        Cart
+                        {cartCount > 0 && (
+                            <span className="flex items-center justify-center rounded-full text-white" style={{ width: '18px', height: '18px', fontSize: '9px', fontWeight: 700, backgroundColor: '#C9A96E' }}>
+                                {cartCount}
+                            </span>
+                        )}
+                    </Link>
+                </div>
+
+                {/* Drawer User Section */}
+                {user ? (
+                    <div className="mt-auto border-t px-6 py-5 flex flex-col gap-3" style={{ borderColor: '#e4e2df' }}>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#1b1c1a', color: '#C9A96E', fontFamily: "'Cormorant Garamond', serif", fontSize: '18px' }}>
+                                {user.fullName?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '15px', color: '#1b1c1a' }}>{user.fullName}</p>
+                                <p style={{ fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#C9A96E' }}>{user.role === 'Seller' ? 'Seller' : 'Member'}</p>
+                            </div>
+                        </div>
+                        <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="text-[10px] tracking-[0.15em] uppercase font-medium" style={{ color: '#7A6E63' }}>My Profile</Link>
+                        {user.role === 'Seller' && (
+                            <Link to="/seller/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-[10px] tracking-[0.15em] uppercase font-medium" style={{ color: '#7A6E63' }}>Dashboard</Link>
+                        )}
+                        <button
+                            onClick={handleLogoutSubmit}
+                            className="text-left text-[10px] tracking-[0.15em] uppercase font-medium transition-colors"
+                            style={{ color: '#c0392b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                            Sign Out
+                        </button>
+                    </div>
+                ) : (
+                    <div className="mt-auto border-t px-6 py-5 flex flex-col gap-3" style={{ borderColor: '#e4e2df' }}>
+                        <Link
+                            to="/login"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="w-full py-3 text-center text-[11px] font-medium tracking-[0.25em] uppercase transition-opacity hover:opacity-80"
+                            style={{ backgroundColor: '#1b1c1a', color: '#C9A96E' }}
+                        >
+                            Sign In
+                        </Link>
+                        <Link
+                            to="/register"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="w-full py-3 text-center text-[11px] font-medium tracking-[0.25em] uppercase border transition-colors"
+                            style={{ borderColor: '#d0c5b5', color: '#7A6E63' }}
+                        >
+                            Create Account
+                        </Link>
+                    </div>
+                )}
+            </div>
         </>
     );
 };

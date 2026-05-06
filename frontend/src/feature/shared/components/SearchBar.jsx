@@ -14,7 +14,6 @@ const SearchBar = () => {
 
     const allProducts = products.length > 0 ? products : [];
 
-    // Filter products based on query
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
@@ -27,7 +26,6 @@ const SearchBar = () => {
         setResults(filtered);
     }, [query, products]);
 
-    // Open search input
     const handleToggle = () => {
         setOpen(prev => {
             if (!prev) setTimeout(() => inputRef.current?.focus(), 50);
@@ -36,7 +34,6 @@ const SearchBar = () => {
         if (open) setQuery('');
     };
 
-    // Close on outside click
     useEffect(() => {
         const handleClick = (e) => {
             if (wrapRef.current && !wrapRef.current.contains(e.target)) {
@@ -110,7 +107,7 @@ const SearchBar = () => {
                 <div
                     className="absolute right-0 top-[calc(100%+12px)] flex flex-col border"
                     style={{
-                        width: '260px',
+                        width: 'min(260px, calc(100vw - 32px))',
                         backgroundColor: '#fff',
                         borderColor: '#e4e2df',
                         boxShadow: '0 8px 32px rgba(27,28,26,0.1)',

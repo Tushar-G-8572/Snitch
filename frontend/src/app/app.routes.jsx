@@ -12,6 +12,7 @@ import WishListPage from "../feature/product/pages/WishListPage";
 import ProfilePage from "../feature/shared/pages/ProfilePage";
 import OrdersPage from "../feature/product/pages/OrdersPage";
 import Negotiation from "../feature/product/AI/Negotiation";
+import EditProfilePage from "../feature/shared/pages/EditProfilePage";
 
 export const router = createBrowserRouter([
     {
@@ -25,6 +26,10 @@ export const router = createBrowserRouter([
     {
         path: '/register',
         element: <RegisterPage />
+    },
+    {
+        path:'/update/profile',
+        element:<EditProfilePage />
     },
     {
         path: `/product/:productId`,
