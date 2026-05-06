@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useProducts } from '../hooks/useProducts';
+import Navbar from '../../shared/components/Navbar';
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP'];
 const MAX_IMAGES = 7;
@@ -88,7 +89,7 @@ const CreateProduct = () => {
 
     return (
         <>
-            {/* Google Fonts */}
+        <Navbar />
             <link
                 href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
                 rel="stylesheet"
@@ -98,32 +99,26 @@ const CreateProduct = () => {
                 className="min-h-screen selection:bg-[#C9A96E]/30"
                 style={{ backgroundColor: '#fbf9f6', fontFamily: "'Inter', sans-serif" }}
             >
-                <div className="max-w-6xl mx-auto px-8 lg:px-16 xl:px-24">
+                <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-16 xl:px-24">
 
                     {/* ── Top Bar ── */}
                     <div className="pt-10 pb-0 flex items-center gap-5">
                         <button
                             onClick={() => navigate(-1)}
                             className="text-lg transition-colors duration-200 leading-none"
-                            style={{ color: '#B5ADA3' }}
+                            style={{ color: 'black' }}
                             aria-label="Go back"
                             onMouseEnter={e => e.currentTarget.style.color = '#C9A96E'}
                             onMouseLeave={e => e.currentTarget.style.color = '#B5ADA3'}
                         >
                             ←
                         </button>
-                        <span
-                            className="text-xs font-medium tracking-[0.32em] uppercase"
-                            style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E' }}
-                        >
-                            Snitch.
-                        </span>
                     </div>
 
                     {/* ── Page Header ── */}
                     <div className="pt-10 pb-0">
                         <h1
-                            className="text-4xl lg:text-5xl font-light leading-tight"
+                            className="text-3xl sm:text-4xl lg:text-5xl font-light leading-tight"
                             style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
                         >
                             New Listing
@@ -133,8 +128,8 @@ const CreateProduct = () => {
                     </div>
 
                     {/* ── Form ── */}
-                    <form onSubmit={handleSubmit} className="pt-14 pb-24">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 lg:items-start">
+                    <form onSubmit={handleSubmit} className="pt-10 sm:pt-14 pb-24">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 lg:items-start">
 
                             {/* ── LEFT COLUMN: Text Fields ── */}
                             <div className="flex flex-col gap-12">
@@ -367,3 +362,5 @@ const CreateProduct = () => {
 };
 
 export default CreateProduct;
+
+

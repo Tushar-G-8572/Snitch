@@ -21,6 +21,15 @@ export async function getMe() {
   return response.data
 }
 
+export async function updateUser(fileInputRef) {
+  const response = await api.post('/update/profile',{
+    fullName:fileInputRef.current.fullName.value,
+    username:fileInputRef.current.username.value,
+    role:fileInputRef.current.role.value
+  })
+  return response.data
+}
+
 export async function logout() {
   const response = await api.get('/logout');
   return response.data

@@ -88,7 +88,7 @@ export const RegisterPage = () => {
 
         {/* ── Card ── */}
         <div
-          className="w-full max-w-lg px-10 py-12"
+          className="w-full max-w-lg px-6 sm:px-10 py-10 sm:py-12"
           style={{ backgroundColor: '#fff', border: `1px solid ${C.border}` }}
         >
           {/* Gold top rule */}
@@ -135,7 +135,7 @@ export const RegisterPage = () => {
           </div>
 
           {/* ── Social Buttons ── */}
-          <div className="flex gap-3 mb-7">
+          <div className="flex flex-col sm:flex-row gap-3 mb-7">
             <a
               href="/api/auth/google"
               id="reg-google"

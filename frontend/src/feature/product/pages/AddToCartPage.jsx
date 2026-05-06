@@ -86,7 +86,7 @@ function NegotiateModal({ total, onClose }) {
 /* ── Skeleton ── */
 function CartSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans p-10">
+    <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-10">
       <div className="max-w-5xl mx-auto">
         <div className="h-9 w-48 bg-gray-200 rounded-lg mb-8 animate-pulse" />
         {[1, 2, 3].map(i => (
@@ -128,12 +128,12 @@ const CartItem = memo(({ item, onIncrement, onDecrement, onRemove, navigate }) =
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-opacity duration-300">
-      <div className="flex gap-5 p-5">
+      <div className="flex gap-3 sm:gap-5 p-3 sm:p-5">
 
         {/* Image */}
         <div
           onClick={() => navigate(`/product/${productId}`)}
-          className="w-28 shrink-0 rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+          className="w-20 sm:w-28 shrink-0 rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
         >
           <img
             src={imgUrl}
@@ -422,25 +422,16 @@ async function handleApplyDiscount() {
       <Navbar />
       {showNegotiate && <NegotiateModal total={total} onClose={() => setShowNegotiate(false)} />}
 
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-10 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2 text-xs text-gray-400">
-          <span className="cursor-pointer hover:text-gray-700 transition-colors" onClick={() => navigate('/')}>Home</span>
-          <span>/</span>
-          <span className="text-gray-900 font-semibold">Cart</span>
-        </div>
-      </nav>
-
-      <div className="max-w-5xl mx-auto px-5 py-8">
-        <h1 className="text-3xl font-black tracking-tight mb-1">Your Cart</h1>
-        <p className="text-gray-400 text-sm mb-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-5 py-6 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1">Your Cart</h1>
+        <p className="text-gray-400 text-sm mb-6 sm:mb-8">
           {items.length} item{items.length !== 1 ? 's' : ''} in your bag
         </p>
 
-        <div className="grid gap-8" style={{ gridTemplateColumns: 'minmax(0,2fr) 340px' }}>
+        <div className="flex flex-col lg:grid lg:gap-8" style={{ gridTemplateColumns: 'minmax(0,2fr) 340px' }}>
 
           {/* Left: Items */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 mb-6 lg:mb-0">
             {items.map(item => (
               <CartItem
                 key={item._id}
@@ -453,8 +444,8 @@ async function handleApplyDiscount() {
             ))}
           </div>
 
-          {/* Right: Summary — sticky */}
-          <div className="sticky top-6 self-start">
+          {/* Right: Summary */}
+          <div className="lg:sticky lg:top-6 lg:self-start">
             <OrderSummary
               items={items}
               total={total}

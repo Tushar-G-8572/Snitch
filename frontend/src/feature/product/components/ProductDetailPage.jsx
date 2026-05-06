@@ -33,11 +33,6 @@ const StarRating = ({ rating = 4.5 }) => {
   return <>{stars}</>;
 };
 
-/**
- * Normalise a variant's `attributes` field.
- * The backend stores it as a Mongoose Map which serialises to a plain object
- * (not a JS Map) when JSON-encoded, so we handle both shapes.
- */
 const getAttrs = (variant) => {
   if (!variant?.attributes) return {};
   if (variant.attributes instanceof Map) return Object.fromEntries(variant.attributes);
@@ -162,7 +157,7 @@ const ProductDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 font-sans pb-20">
-        <div className="max-w-5xl mx-auto px-10 py-6 grid grid-cols-2 gap-16">
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 lg:px-10 py-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           <div className="w-full aspect-[4/5] bg-gray-300 rounded animate-pulse" />
           <div className="flex flex-col gap-4 pt-5">
             {[80, 50, 30, 60, 40].map((w, i) => (
@@ -219,21 +214,21 @@ const ProductDetailPage = () => {
     <div className="min-h-screen bg-gray-50 font-sans pb-20 text-gray-700">
       <Navbar />
       {/* Breadcrumb */}
-      <nav className="w-full flex justify-between items-center ">
-        <div className=' px-10 py-5 text-xs text-gray-600 flex items-center gap-1'>
+      <nav className="w-full">
+        <div className="px-4 sm:px-8 lg:px-10 py-4 text-xs text-gray-600 flex items-center gap-1 flex-wrap">
           <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate('/')}>Home</span>
           <span className="text-gray-400 px-1"> / </span>
           <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate(-1)}>Products</span>
           <span className="text-gray-400 px-1"> / </span>
-          <span className="text-gray-900 font-medium">{title || 'Product'}</span>
+          <span className="text-gray-900 font-medium truncate max-w-[160px] sm:max-w-none">{title || 'Product'}</span>
         </div>
       </nav>
 
       {/* Main Grid */}
-      <div className="max-w-5xl mx-auto px-10 py-6 grid grid-cols-2 gap-16 items-start">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 lg:px-10 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
 
         {/* ── LEFT: Gallery ── */}
-        <div className="flex flex-col gap-4 sticky top-6">
+        <div className="flex flex-col gap-4 lg:sticky lg:top-6">
 
 
           {/* Main Image */}
@@ -267,12 +262,12 @@ const ProductDetailPage = () => {
 
           {/* Thumbnails */}
           {baseImgs.length > 1 && (
-            <div className="flex gap-2.5 flex-wrap">
+            <div className="flex gap-2 sm:gap-2.5 flex-wrap">
               {baseImgs.map((url, i) => (
                 <button
                   key={i}
                   onClick={() => { setImgLoaded(false); setActiveImgUrl(url); setSelectedAttrs(product); }}
-                  className={`w-20 h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
+                  className={`w-14 h-16 sm:w-20 sm:h-24 rounded overflow-hidden bg-white cursor-pointer transition border-2 ${url === activeImgUrl ? 'border-gray-900' : 'border-transparent'
                     }`}
                 >
                   <img

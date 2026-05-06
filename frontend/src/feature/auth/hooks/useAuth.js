@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { login, register, getMe, logout } from "../services/auth.api";
+import { login, register, getMe, logout, updateUser } from "../services/auth.api";
 import { setUser, setError, setLoading, setAuthChecked } from "../state/auth.slice";
 
 export const useAuth = () => {
@@ -51,10 +51,23 @@ export const useAuth = () => {
     dispatch(setUser(null));
   }
 
+  async function handleUpdateUser(fileInputRef) {
+    try{
+      dispatch(setLoading(true));
+      const result = await updateUser(fileInputRef)
+      return result.success;
+    }catch(error){
+      dispatch(setError(error?.message || "Error"))
+    }finally{
+      dispatch(setLoading(false));
+    }
+  }
+
   return {
     handleLogin,
     handleRegister,
     handleGetMe,
-    handleLogout
+    handleLogout,
+    handleUpdateUser
   }
 }

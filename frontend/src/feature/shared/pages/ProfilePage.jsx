@@ -43,10 +43,10 @@ const ProfilePage = () => {
             <div style={{ backgroundColor: '#fbf9f6', minHeight: '100vh', fontFamily: "'DM Sans', sans-serif" }}>
                 <Navbar />
 
-                <div className="max-w-4xl mx-auto px-6 lg:px-16 py-16">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-16 py-10 sm:py-16">
 
                     {/* ── Page Label ── */}
-                    <div className="mb-10">
+                    <div className="mb-8 sm:mb-10">
                         <span
                             className="block text-[10px] uppercase tracking-[0.28em] font-medium mb-2"
                             style={{ color: '#C9A96E' }}
@@ -63,20 +63,20 @@ const ProfilePage = () => {
 
                     {/* ── User Banner ── */}
                     <div
-                        className="flex items-center gap-5 mb-10 pb-8 border-b"
+                        className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 mb-8 sm:mb-10 pb-6 sm:pb-8 border-b"
                         style={{ borderColor: '#e4e2df' }}
                     >
                         {/* Avatar */}
                         <div
-                            className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0"
+                            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center flex-shrink-0"
                             style={{
                                 backgroundColor: '#1b1c1a',
                                 color: '#C9A96E',
                                 fontFamily: "'Cormorant Garamond', serif",
-                                fontSize: '28px',
+                                fontSize: '26px',
                             }}
                         >
-                            {user.fullname?.charAt(0).toUpperCase()}
+                            {user.fullName?.charAt(0).toUpperCase()}
                         </div>
 
                         <div>
@@ -88,7 +88,7 @@ const ProfilePage = () => {
                                     lineHeight: 1,
                                 }}
                             >
-                                {user.fullname}
+                                {user.fullName}
                             </p>
                             <p style={{ fontSize: '11px', color: '#7A6E63', marginTop: '5px', letterSpacing: '0.06em' }}>
                                 {user.email}
@@ -97,7 +97,7 @@ const ProfilePage = () => {
                                 className="inline-block mt-2 text-[9px] tracking-[0.18em] uppercase px-2 py-0.5"
                                 style={{ backgroundColor: '#f5f3f0', color: '#C9A96E' }}
                             >
-                                {user.role === 'seller' ? 'Seller' : 'Member'}
+                                {user.role === 'Seller' ? 'Seller' : 'Member'}
                             </span>
                         </div>
                     </div>
@@ -108,7 +108,7 @@ const ProfilePage = () => {
                         <InfoCard label="Email Address" value={user.email} small />
                         <InfoCard
                             label="Account Type"
-                            value={user.role === 'seller' ? 'Seller Account' : 'Member Account'}
+                            value={user.role === 'Seller' ? 'Seller Account' : 'Member Account'}
                         />
                         <InfoCard
                             label="Member Since"
@@ -134,7 +134,7 @@ const ProfilePage = () => {
                             icon={<OrderIcon />}
                             onClick={() => navigate('/orders')}
                         />
-                        {user.role === 'seller' && (
+                        {user.role === 'Seller' && (
                             <QuickLink
                                 label="Seller Dashboard"
                                 description="Manage your products and sales"
@@ -146,7 +146,7 @@ const ProfilePage = () => {
                             label="Edit Profile"
                             description="Update your name and details"
                             icon={<EditIcon />}
-                            onClick={() => {}}
+                            onClick={() => navigate('/update/profile')}
                         />
                     </div>
 
