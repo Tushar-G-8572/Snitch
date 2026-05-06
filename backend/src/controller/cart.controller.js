@@ -263,10 +263,8 @@ export async function verifyPaymentOrder(req, res) {
 export async function handleGetOrders(req, res) {
     try {
         const userId = req.user.id;
-        console.log(typeof (userId), userId)
 
         const orders = await paymentModel.find({ user: userId, status: "paid" }).lean();
-        console.log("find lean:", orders.length);
 
         if (orders.length > 0) {
             return res.status(200).json({ success: true, orders });

@@ -68,7 +68,7 @@ function NegotiateModal({ total, onClose }) {
             className={`w-full py-3.5 rounded-xl text-white font-bold text-sm tracking-wide mb-3 transition-opacity
               ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-br from-violet-600 to-indigo-600 hover:opacity-90 cursor-pointer'}`}
           >
-            {loading ? '🔄 Negotiating...' : '✨ Negotiate Now'}
+            {loading ? ' Negotiating...' : ' Negotiate Now'}
           </button>
         )}
 

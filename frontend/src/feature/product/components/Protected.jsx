@@ -1,6 +1,7 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { Navigate } from 'react-router';
+import Loader from '../../shared/components/Loader';
 
 const Protected = ({children, role='Buyer'}) => {
 
@@ -9,17 +10,15 @@ const Protected = ({children, role='Buyer'}) => {
  const authChecked = useSelector(state => state.auth.isAuthChecked)
 
  if(!authChecked){
-  return <h1>Checking authentication...</h1>;
+  return <Loader />;
  }
 
  if(loading){
   return (
-   <h1>Loading....</h1>
+   <Loader />
   )
  }
 
-//  console.log(user);
-//  console.log(role)
 
  if(!user){
   return <Navigate to='/login' />

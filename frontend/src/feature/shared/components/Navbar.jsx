@@ -7,7 +7,6 @@ import SearchBar from './SearchBar';
 const Navbar = () => {
     const user = useSelector(state => state.auth.user);
     const cartItems = useSelector(state => state.cart.cartProducts || []);
-    console.log(cartItems)
     const navigate = useNavigate();
     const [profileOpen, setProfileOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
+import Loader from '../../shared/components/Loader';
 
 /* ── Brand tokens (mirrors Dashboard / EditProduct) ── */
 const C = {
@@ -33,6 +34,12 @@ export const RegisterPage = () => {
   const loading = useSelector(state => state.auth.loading);
   const error = useSelector(state => state.auth.error);
   const user = useSelector(state => state.auth.user);
+
+  if(loading){
+    return (
+      <Loader />
+    )
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,10 +87,10 @@ export const RegisterPage = () => {
         {/* ── Brand mark ── */}
         <Link
           to="/"
-          className="text-xs font-medium tracking-[0.4em] uppercase mb-12 transition-colors duration-200"
+          className="text-lg font-medium tracking-[0.4em] uppercase mb-12 transition-colors duration-200"
           style={{ fontFamily: C.serif, color: C.gold }}
         >
-          Snitch.
+          Snitch
         </Link>
 
         {/* ── Card ── */}
@@ -91,8 +98,6 @@ export const RegisterPage = () => {
           className="w-full max-w-lg px-6 sm:px-10 py-10 sm:py-12"
           style={{ backgroundColor: '#fff', border: `1px solid ${C.border}` }}
         >
-          {/* Gold top rule */}
-          <div className="w-10 h-px mb-8" style={{ backgroundColor: C.gold }} />
 
           {/* Header */}
           <div className="mb-8">
@@ -146,16 +151,6 @@ export const RegisterPage = () => {
             >
               <FcGoogle size={16} />
               <span>Google</span>
-            </a>
-            <a
-              id="reg-apple"
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-[0.18em] font-medium transition-all duration-300 cursor-pointer"
-              style={{ border: `1px solid ${C.border}`, color: C.muted, fontFamily: C.sans }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.text; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}
-            >
-              <FaApple size={16} style={{ color: C.text }} />
-              <span>Apple</span>
             </a>
           </div>
 

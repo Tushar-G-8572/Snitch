@@ -22,9 +22,6 @@ const OrdersPage = () => {
         handleGetOrders();
     }, []);
 
-
-    console.log(orders);
-
     if (!user) {
         return (
             <div style={{ backgroundColor: '#fbf9f6', minHeight: '100vh' }}>

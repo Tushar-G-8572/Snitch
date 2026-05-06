@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import Navbar from '../../shared/components/Navbar';
 
 const Dashboard = () => {
-    const { handleGetSellerProducts } = useProducts();
+    const { handleGetSellerProducts , handleDeleteProduct } = useProducts();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -13,6 +13,11 @@ const Dashboard = () => {
     }, []);
 
     const sellerProducts = useSelector(state => state.product.sellerProducts);
+
+    const handleDelete = async (productId) => {
+         await handleDeleteProduct(productId);
+         await handleGetSellerProducts();
+    }
 
     return (
         <>
@@ -118,11 +123,7 @@ const Dashboard = () => {
                                                 </button>
 
                                                 <button
-                                                    onClick={() => {
-                                                        if (window.confirm(`Delete "${product.title}"? This cannot be undone.`)) {
-                                                            console.log('delete', product._id);
-                                                        }
-                                                    }}
+                                                    onClick={()=>{handleDelete(product._id)}}
                                                     className="flex-1 py-1.5 sm:py-2 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-medium transition-all duration-300"
                                                     style={{ border: '1px solid #C9A96E', backgroundColor: 'transparent', color: '#C9A96E', cursor: 'pointer' }}
                                                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#C9A96E'; e.currentTarget.style.color = '#1b1c1a'; }}

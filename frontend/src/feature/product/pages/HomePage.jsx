@@ -103,8 +103,7 @@ const HomePage = () => {
                     </div>
 
                     {products && products.length > 0 ? (
-                        // 👇 KEY CHANGE: 2 cols on mobile, 3 on tablet, 4 on desktop
-                        // Tighter gaps on mobile, normal on desktop
+
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-8 sm:gap-x-6 sm:gap-y-12 lg:gap-x-8 lg:gap-y-16 pb-20 sm:pb-32">
                             {products.map(product => {
                                 const imageUrl = product.images?.[0]?.url || null;
@@ -159,7 +158,6 @@ const HomePage = () => {
                                         {/* ── Details ── */}
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-start justify-between gap-1">
-                                                {/* 👇 Smaller title on mobile */}
                                                 <h3 className="text-sm sm:text-base lg:text-lg leading-snug transition-colors duration-300 group-hover:text-[#C9A96E] flex-1"
                                                     style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}>
                                                     {product.title}
@@ -174,7 +172,6 @@ const HomePage = () => {
                                                 </button>
                                             </div>
 
-                                            {/* Description hidden on mobile — too cluttered */}
                                             <p className="hidden sm:block text-[11px] line-clamp-1 leading-relaxed" style={{ color: '#7A6E63' }}>
                                                 {product.description}
                                             </p>

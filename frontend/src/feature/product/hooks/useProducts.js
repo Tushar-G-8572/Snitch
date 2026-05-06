@@ -1,9 +1,10 @@
 import { useDispatch } from "react-redux";
-import { createProduct, editProduct, getProductfromProductId, getProducts, getSellerProduct,editProductVariants, addToWishlist, getWishListProduct } from "../services/product.api";
+import { createProduct, editProduct, getProductfromProductId, getProducts,deleteProduct, getSellerProduct,editProductVariants, addToWishlist, getWishListProduct } from "../services/product.api";
 import { setSellerProducts, setProducts, setLoading,setSearchProducts, setError } from "../state/product.slice";
 
 export const useProducts = () => {
   const dispatch = useDispatch();
+
   async function handleCreateProduct(productData) {
     try {
       dispatch(setLoading(true));
@@ -122,6 +123,19 @@ export const useProducts = () => {
     }
   }
 
+  async function handleDeleteProduct(productId) {
+    try{
+      dispatch(setLoading(true));
+     const result = await deleteProduct(productId)
+     return result.success
+    }catch(error){
+      console.error(error);
+      dispatch(setError(error?.response?.message || "Error"))
+    }finally{
+      dispatch(setLoading(false));
+    }
+  }
+
   return { 
      handleCreateProduct,
      handleGetAllProducts, 
@@ -130,7 +144,8 @@ export const useProducts = () => {
      handleEditProduct,
      handleEditProductVarient,
      handleAddTowishList,
-     handleGetWishlistProduct
+     handleGetWishlistProduct,
+     handleDeleteProduct
     };
 
 }

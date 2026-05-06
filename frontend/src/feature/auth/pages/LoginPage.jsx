@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
+import Loader from '../../shared/components/Loader';
 
 /* ── Brand tokens (mirrors Dashboard / EditProduct) ── */
 const C = {
@@ -47,17 +48,7 @@ export const LoginPage = () => {
 
   if (loading) {
     return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: C.bg }}>
-          <span className="text-xs uppercase tracking-[0.3em]" style={{ color: C.faint, fontFamily: C.sans }}>
-            Signing in…
-          </span>
-        </div>
-      </>
+      <Loader />
     );
   }
 
@@ -76,10 +67,10 @@ export const LoginPage = () => {
         {/* ── Brand mark ── */}
         <Link
           to="/"
-          className="text-xs font-medium tracking-[0.4em] uppercase mb-12 transition-colors duration-200"
+          className="text-lg font-medium tracking-[0.4em] uppercase mb-12 transition-colors duration-200"
           style={{ fontFamily: C.serif, color: C.gold, letterSpacing: '0.4em' }}
         >
-          Snitch.
+          Snitch
         </Link>
 
         {/* ── Card ── */}
@@ -87,8 +78,6 @@ export const LoginPage = () => {
           className="w-full max-w-md px-6 sm:px-10 py-10 sm:py-12"
           style={{ backgroundColor: '#fff', border: `1px solid ${C.border}` }}
         >
-          {/* Gold top rule */}
-          <div className="w-10 h-px mb-8" style={{ backgroundColor: C.gold }} />
 
           {/* Header */}
           <div className="mb-10">
@@ -159,15 +148,6 @@ export const LoginPage = () => {
                 >
                   Password
                 </label>
-                <a
-                  href="#"
-                  className="text-[10px] uppercase tracking-[0.15em] transition-colors duration-200"
-                  style={{ color: C.faint }}
-                  onMouseEnter={e => (e.currentTarget.style.color = C.gold)}
-                  onMouseLeave={e => (e.currentTarget.style.color = C.faint)}
-                >
-                  Forgot?
-                </a>
               </div>
               <input
                 id="login-password"
@@ -238,23 +218,6 @@ export const LoginPage = () => {
             >
               <FcGoogle size={16} />
               <span>Google</span>
-            </a>
-            {/* Apple */}
-            <a
-              id="login-apple"
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-[0.18em] font-medium transition-all duration-300 cursor-pointer"
-              style={{ border: `1px solid ${C.border}`, color: C.muted, fontFamily: C.sans }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = C.gold;
-                e.currentTarget.style.color = C.text;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = C.border;
-                e.currentTarget.style.color = C.muted;
-              }}
-            >
-              <FaApple size={16} style={{ color: C.text }} />
-              <span>Apple</span>
             </a>
           </div>
 

@@ -14,7 +14,6 @@ const SearchBar = () => {
 
     const allProducts = products.length > 0 ? products : [];
 
-    // Filter products based on query
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
@@ -27,7 +26,6 @@ const SearchBar = () => {
         setResults(filtered);
     }, [query, products]);
 
-    // Open search input
     const handleToggle = () => {
         setOpen(prev => {
             if (!prev) setTimeout(() => inputRef.current?.focus(), 50);
@@ -36,7 +34,6 @@ const SearchBar = () => {
         if (open) setQuery('');
     };
 
-    // Close on outside click
     useEffect(() => {
         const handleClick = (e) => {
             if (wrapRef.current && !wrapRef.current.contains(e.target)) {
