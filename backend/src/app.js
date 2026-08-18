@@ -23,6 +23,10 @@ app.use(cookieParser());
 
 app.use(passport.initialize());
 
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ message: 'Server is healthy' });
+});
+
 app.use('/api/auth', authRouter);
 app.use('/api/product',productRouter);
 app.use('/api/cart',cartRouter);
