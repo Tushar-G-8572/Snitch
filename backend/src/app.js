@@ -9,7 +9,6 @@ import cartRouter from './routers/cart.routes.js';
 import path from 'path'
 import { fileURLToPath } from 'url';
 
-
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);

@@ -8,8 +8,9 @@ export default defineConfig({
     proxy:{
       "/api":{
         target:"https://snitch-w2kp.onrender.com",
+        // target:'http://localhost:4000',
         changeOrigin:true,
-        secure:false
+        secure:true,
       }
     },
   }

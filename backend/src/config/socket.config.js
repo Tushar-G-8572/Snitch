@@ -9,7 +9,7 @@ let io;
 
 export function initSocket(server) {
   io = new Server(server, {
-    cors: { origin: '*', credentials: true },
+    cors: { origin: 'https://snitch-w2kp.onrender.com', credentials: true },
     allowEIO3: true,
   });
 
