@@ -180,7 +180,7 @@ const Negotiation = () => {
               <span className="text-xl sm:text-2xl font-black text-[#1a1a1a]">{fmt(currentOffer)}</span>
               {negotiationEnded && (
                 <span className="block text-xs text-red-500 uppercase tracking-widest font-bold mt-1">
-                  Valid for 15 mins only — hurry!
+                  Valid for 5 mins only — hurry!
                 </span>
               )}
             </div>

@@ -45,7 +45,7 @@ export const varifyPaymentOrder = async({razorpay_order_id,razorpay_payment_id,r
 
 export const getOrdersDetails = async()=>{
     const response = await api.get('/order');
-    return response.data
+    return response.data;
 }
 
 export const getDiscount = async(socketId,discountCoupon)=>{
